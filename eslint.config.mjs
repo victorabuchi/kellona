@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     // never hand-edited, so not worth linting.
     "src/prisma/contract.d.ts",
     "migrations/**",
+    ".claude/**",
+    ".agents/**",
+    ".localdb/**",
   ]),
 ]);
 
