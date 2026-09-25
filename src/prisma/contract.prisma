@@ -1,0 +1,328 @@
+// use prisma-8
+
+// Tenant model: every row that belongs to a customer carries organizationId.
+// Kinds and statuses are plain strings, validated in code (src/lib/*-kinds.ts).
+
+model Organization {
+  id                  Uuid                @id @default(uuid())
+  slug                String              @unique
+  name                String
+  shortName           String
+  // 'active' | 'pilot' | 'suspended'
+  status              String              @default("pilot")
+  // Marks organizations that exist only to demo and test the product.
+  isDemo              Boolean             @default(false)
+  defaultLocale       String              @default("fi")
+  // Comma separated, for example "fi,en".
+  locales             String              @default("fi,en")
+  timezone            String              @default("Europe/Helsinki")
+  supportEmail        String?
+  supportPhone        String?
+  supportUrl          String?
+  // Data controller details used on the privacy and terms pages.
+  legalName           String?
+  businessId          String?
+  address             String?
+  privacyEmail        String?
+  // Name shown as the sender of emails and push notifications.
+  senderName          String?
+  createdAt           TimestamptzString   @default(now())
+  domains             OrgDomain[]
+  brand               OrgBrand?
+  texts               OrgText[]
+  buildings           Building[]
+  units               Unit[]
+  residents           Resident[]
+  staff               Staff[]
+  staffBuildings      StaffBuilding[]
+  identities          AuthIdentity[]
+  facilities          Facility[]
+  buildingAmenities   BuildingAmenity[]
+  unitAmenities       UnitAmenity[]
+  bookings            Booking[]
+  participants        BookingParticipant[]
+  parkingClaims       ParkingClaim[]
+  pushSubscriptions   PushSubscription[]
+
+  @@map("organization")
+}
+
+// A web address that serves one organization, such as a customer subdomain or
+// a custom domain. Platform subdomains (<slug>.kellona.fi) need no row.
+model OrgDomain {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  host           String            @unique
+  isPrimary      Boolean           @default(false)
+  createdAt      TimestamptzString @default(now())
+
+  @@index([organizationId])
+  @@map("org_domain")
+}
+
+model OrgBrand {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid              @unique
+  logoLightUrl   String?
+  logoDarkUrl    String?
+  faviconUrl     String?
+  // Square icon for the installable app. Falls back to the favicon.
+  appIconUrl     String?
+  primaryColor   String            @default("#2f5d8a")
+  accentColor    String            @default("#e0a526")
+  updatedAt      TimestamptzString @default(now())
+
+  @@map("org_brand")
+}
+
+// Per organization text overrides on top of the built in Finnish and English.
+model OrgText {
+  id             Uuid         @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  locale         String
+  key            String
+  value          String
+
+  @@unique([organizationId, locale, key])
+  @@map("org_text")
+}
+
+model Building {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  name           String
+  address        String?
+  // Identifier in the customer's own system, used to match CSV imports.
+  externalRef    String?
+  createdAt      TimestamptzString @default(now())
+  units          Unit[]
+  facilities     Facility[]
+  amenities      BuildingAmenity[]
+  staffLinks     StaffBuilding[]
+
+  @@unique([organizationId, name])
+  @@map("building")
+}
+
+model Unit {
+  id             Uuid          @id @default(uuid())
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  building       Building      @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  buildingId     Uuid
+  code           String
+  floor          Int?
+  externalRef    String?
+  residents      Resident[]
+  amenities      UnitAmenity[]
+
+  @@unique([buildingId, code])
+  @@index([organizationId])
+  @@map("unit")
+}
+
+model Resident {
+  id                Uuid                 @id @default(uuid())
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId    Uuid
+  unit              Unit?                @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unitId            Uuid?
+  name              String
+  email             String
+  locale            String?
+  externalRef       String?
+  // 'active' | 'moved_out'
+  status            String               @default("active")
+  createdAt         TimestamptzString    @default(now())
+  identities        AuthIdentity[]
+  bookings          Booking[]
+  participations    BookingParticipant[]
+  parkingClaim      ParkingClaim?
+  pushSubscriptions PushSubscription[]
+
+  @@unique([organizationId, email])
+  @@index([unitId])
+  @@map("resident")
+}
+
+model Staff {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  name           String
+  email          String
+  // 'manager' sees every building, 'staff' only linked buildings.
+  role           String            @default("staff")
+  createdAt      TimestamptzString @default(now())
+  buildings      StaffBuilding[]
+  identities     AuthIdentity[]
+
+  @@unique([organizationId, email])
+  @@map("staff")
+}
+
+model StaffBuilding {
+  id             Uuid         @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  staff          Staff        @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffId        Uuid
+  building       Building     @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  buildingId     Uuid
+
+  @@unique([staffId, buildingId])
+  @@map("staff_building")
+}
+
+// A verified way to sign in. provider is 'email', 'google', or 'oidc:<name>' /
+// 'saml:<name>' for an organization's own single sign-on later.
+model AuthIdentity {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  provider       String
+  subject        String
+  resident       Resident?         @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid?
+  staff          Staff?            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffId        Uuid?
+  createdAt      TimestamptzString @default(now())
+  lastUsedAt     TimestamptzString?
+
+  @@unique([organizationId, provider, subject])
+  @@map("auth_identity")
+}
+
+// One bookable thing: a laundry machine, a sauna, a parking spot or a space.
+// kind is one of AMENITY_KINDS. Rule columns are filled from per kind defaults
+// and can be tuned per facility by staff.
+model Facility {
+  id                 Uuid              @id @default(uuid())
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId     Uuid
+  building           Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  buildingId         Uuid
+  kind               String
+  name               String
+  description        String?
+  capacity           Int               @default(1)
+  openHour           Int               @default(8)
+  closeHour          Int               @default(22)
+  // Fixed turn starts such as "16,18,20". Empty means any hour in opening hours.
+  turnStartHours     String?
+  slotHours          Int               @default(1)
+  maxHoursPerBooking Int               @default(2)
+  maxHoursPerWeek    Int               @default(4)
+  advanceDays        Int               @default(7)
+  sortOrder          Int               @default(0)
+  createdAt          TimestamptzString @default(now())
+  bookings           Booking[]
+  parkingClaim       ParkingClaim?
+
+  @@unique([buildingId, name])
+  @@index([organizationId])
+  @@map("facility")
+}
+
+// 'yes' / 'no' per building and kind. No row means automatic.
+model BuildingAmenity {
+  id             Uuid         @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  building       Building     @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  buildingId     Uuid
+  kind           String
+  enabled        Boolean
+
+  @@unique([buildingId, kind])
+  @@map("building_amenity")
+}
+
+// Apartment level exception, wins over the building setting.
+model UnitAmenity {
+  id             Uuid         @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  unit           Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unitId         Uuid
+  kind           String
+  enabled        Boolean
+
+  @@unique([unitId, kind])
+  @@map("unit_amenity")
+}
+
+model Booking {
+  id             Uuid                 @id @default(uuid())
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  facility       Facility             @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId     Uuid
+  resident       Resident             @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid
+  startsAt       TimestamptzString
+  endsAt         TimestamptzString
+  note           String?
+  // Shared by every week of a standing weekly turn.
+  seriesId       Uuid?
+  reminderSentAt TimestamptzString?
+  // Set when the booker checks in (QR). Past bookings without it count as no-shows.
+  checkedInAt    TimestamptzString?
+  createdAt      TimestamptzString    @default(now())
+  participants   BookingParticipant[]
+
+  @@unique([facilityId, startsAt])
+  @@index([organizationId, startsAt])
+  @@index([residentId])
+  @@map("booking")
+}
+
+model BookingParticipant {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  booking        Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId      Uuid
+  resident       Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid
+  // 'invited' | 'accepted' | 'declined'
+  status         String            @default("invited")
+  createdAt      TimestamptzString @default(now())
+
+  @@unique([bookingId, residentId])
+  @@index([residentId])
+  @@map("booking_participant")
+}
+
+// A resident holds at most one parking spot, and a spot has at most one holder.
+model ParkingClaim {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  facility       Facility          @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId     Uuid              @unique
+  resident       Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid              @unique
+  claimedAt      TimestamptzString @default(now())
+
+  @@map("parking_claim")
+}
+
+model PushSubscription {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  resident       Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid
+  endpoint       String            @unique
+  p256dh         String
+  auth           String
+  createdAt      TimestamptzString @default(now())
+
+  @@index([residentId])
+  @@map("push_subscription")
+}
