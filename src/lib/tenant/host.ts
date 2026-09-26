@@ -5,8 +5,6 @@ export type OrgRef = { by: 'domain'; host: string } | { by: 'slug'; slug: string
 export type HostConfig = {
   // Domains that serve organizations as <slug>.<domain>, for example kellona.fi.
   platformDomains: string[];
-  // Organization used when the request comes to a bare platform host in development.
-  devSlug: string | null;
   production: boolean;
 };
 
@@ -33,9 +31,8 @@ export function resolveOrgRef(rawHost: string | null | undefined, config: HostCo
 
   const platforms = config.production ? config.platformDomains : [...config.platformDomains, 'localhost', '127.0.0.1'];
   for (const domain of platforms) {
-    if (host === domain) {
-      return !config.production && config.devSlug ? { by: 'slug', slug: config.devSlug, host } : null;
-    }
+    // The bare platform host is Kellona's own site, not an organization.
+    if (host === domain) return null;
     if (host.endsWith(`.${domain}`)) {
       const label = host.slice(0, -(domain.length + 1));
       if (label.includes('.') || !isValidSlug(label)) return null;
@@ -51,7 +48,15 @@ export function hostConfigFromEnv(env: Record<string, string | undefined> = proc
       .split(',')
       .map((d) => d.trim().toLowerCase())
       .filter(Boolean),
-    devSlug: env['DEV_ORG_SLUG']?.trim() || null,
     production: env['NODE_ENV'] === 'production',
   };
+}
+
+// kellona.fi, kellona.com, and in development plain localhost: Kellona's own
+// landing, login and sign-up pages.
+export function isPlatformHost(rawHost: string | null | undefined, config: HostConfig): boolean {
+  const host = normalizeHost(rawHost);
+  if (!host) return false;
+  const platforms = config.production ? config.platformDomains : [...config.platformDomains, 'localhost', '127.0.0.1'];
+  return platforms.includes(host);
 }

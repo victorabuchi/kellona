@@ -81,3 +81,18 @@ export async function loadOrgByHost(host: string): Promise<OrgContext | null> {
 export async function isHostTaken(host: string): Promise<boolean> {
   return Boolean(await db.orm.public.OrgDomain.where({ host }).first());
 }
+
+export type OrgAccount = { organizationId: string; slug: string; name: string; primaryHost: string | null };
+
+// Which organizations an email belongs to, as a resident or staff member. Used
+// only on the platform sign-in page, to send people to their own address.
+export async function findOrgAccountsByEmail(email: string): Promise<OrgAccount[]> {
+  const [residents, staff] = await Promise.all([
+    db.orm.public.Resident.where({ email, status: 'active' }).all(),
+    db.orm.public.Staff.where({ email }).all(),
+  ]);
+  const ids = [...new Set([...residents, ...staff].map((r) => r.organizationId))];
+  if (!ids.length) return [];
+  const orgs = await db.orm.public.Organization.where((o) => o.id.in(ids)).where((o) => o.status.neq('suspended')).include('domains', (d) => d).all();
+  return orgs.map((o) => ({ organizationId: o.id, slug: o.slug, name: o.name, primaryHost: o.domains.find((d) => d.isPrimary)?.host ?? null }));
+}

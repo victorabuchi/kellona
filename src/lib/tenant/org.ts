@@ -1,12 +1,12 @@
 import { cache } from 'react';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { hostConfigFromEnv, normalizeHost, resolveOrgRef } from './host';
+import { hostConfigFromEnv, isPlatformHost, normalizeHost, resolveOrgRef } from './host';
 import { loadOrgByHost, loadOrgBySlug, type OrgContext } from './load';
 
 // The organization for the current request, resolved once per request from the
 // Host header: a registered custom domain first, then <slug>.<platform domain>,
-// then DEV_ORG_SLUG on plain localhost in development.
+// and nothing on the bare platform host.
 export const getCurrentOrg = cache(async (): Promise<OrgContext | null> => {
   const rawHost = (await headers()).get('host');
   const host = normalizeHost(rawHost);
@@ -24,4 +24,8 @@ export async function requireOrg(): Promise<OrgContext> {
   const org = await getCurrentOrg();
   if (!org || org.status === 'suspended') notFound();
   return org;
+}
+
+export async function onPlatformHost(): Promise<boolean> {
+  return isPlatformHost((await headers()).get('host'), hostConfigFromEnv());
 }
