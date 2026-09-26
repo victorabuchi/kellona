@@ -7,7 +7,7 @@ import { requireAdmin } from '../auth/viewer';
 import { orgScope } from '../tenant/scope';
 import { isValidSlug } from '../tenant/host';
 import { isHexColor } from '../brand/color';
-import { addDomain, removeDomain, updateOrgBrand, updateOrgDetails } from './org-updates';
+import { addDomain, makePrimary, removeDomain, updateOrgBrand, updateOrgDetails, verifyDomain } from './org-updates';
 
 const str = (formData: FormData, name: string, max = 200) => String(formData.get(name) ?? '').trim().slice(0, max);
 const orNull = (v: string) => v || null;
@@ -64,8 +64,22 @@ export async function saveBrandAction(formData: FormData) {
 export async function addDomainAction(formData: FormData) {
   await requireAdmin();
   const id = str(formData, 'id', 40);
-  const ok = await addDomain(id, str(formData, 'host', 253));
-  redirect(`${backPath(formData, id)}?${ok ? 'saved=1' : 'error=domain'}`);
+  const result = await addDomain(id, str(formData, 'host', 253));
+  redirect(`${backPath(formData, id)}?${result === 'ok' ? 'domain=added' : `error=${result}`}`);
+}
+
+export async function verifyDomainAction(formData: FormData) {
+  await requireAdmin();
+  const id = str(formData, 'id', 40);
+  const ok = await verifyDomain(id, str(formData, 'domainId', 40));
+  redirect(`${backPath(formData, id)}?domain=${ok ? 'verified' : 'pending'}`);
+}
+
+export async function makePrimaryAction(formData: FormData) {
+  await requireAdmin();
+  const id = str(formData, 'id', 40);
+  await makePrimary(id, str(formData, 'domainId', 40));
+  redirect(`${backPath(formData, id)}?domain=primary`);
 }
 
 export async function removeDomainAction(formData: FormData) {

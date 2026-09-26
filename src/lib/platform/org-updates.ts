@@ -1,7 +1,11 @@
 import { db } from '../../prisma/db';
 import { orgScope } from '../tenant/scope';
 import { isHostTaken } from '../tenant/load';
-import { normalizeHost } from '../tenant/host';
+import { randomBytes } from 'node:crypto';
+import { hostConfigFromEnv, normalizeHost } from '../tenant/host';
+import { checkDomain } from '../tenant/domain-check';
+import { cnameTarget, liveDns } from '../tenant/dns';
+import { addToHosting, removeFromHosting } from '../tenant/hosting';
 import { isHexColor } from '../brand/color';
 import { readImage } from './image';
 
@@ -62,15 +66,61 @@ export async function updateOrgBrand(id: string, formData: FormData): Promise<bo
   return ok;
 }
 
-export async function addDomain(id: string, rawHost: string): Promise<boolean> {
+export type DomainResult = 'ok' | 'invalid' | 'taken';
+
+// Adds a domain as pending, with a fresh ownership token. It serves nothing
+// until verified.
+export async function addDomain(id: string, rawHost: string): Promise<DomainResult> {
   const host = normalizeHost(rawHost);
-  if (!host || !/^[a-z0-9.-]+$/.test(host) || (await isHostTaken(host))) return false;
+  if (!host || !/^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9-]{2,63}$/.test(host) || isPlatformDomain(host)) return 'invalid';
+  if (await isHostTaken(host)) return 'taken';
+  await orgScope(id).domains.create({ host, isPrimary: false, verificationToken: randomBytes(12).toString('hex') });
+  await addToHosting(host);
+  return 'ok';
+}
+
+export async function verifyDomain(id: string, domainId: string): Promise<boolean> {
   const scope = orgScope(id);
-  const hasPrimary = await scope.domains.q().where({ isPrimary: true }).first();
-  await scope.domains.create({ host, isPrimary: !hasPrimary });
+  const domain = await scope.domains.q().where({ id: domainId }).first();
+  if (!domain) return false;
+  const token = domain.verificationToken ?? randomBytes(12).toString('hex');
+  const result = await checkDomain(domain.host, token, cnameTarget(), liveDns, { allowLocal: process.env.NODE_ENV !== 'production' });
+  const now = new Date().toISOString();
+  await scope.domains.q().where({ id: domainId }).update({
+    verificationToken: token,
+    lastCheckedAt: now,
+    lastError: result.error,
+    verifiedAt: result.verified ? (domain.verifiedAt ?? now) : null,
+  });
+  // The first verified domain becomes the primary address.
+  if (result.verified && !(await scope.domains.q().where({ isPrimary: true }).first())) {
+    await scope.domains.q().where({ id: domainId }).update({ isPrimary: true });
+  }
+  return result.verified;
+}
+
+export async function makePrimary(id: string, domainId: string): Promise<boolean> {
+  const scope = orgScope(id);
+  const domain = await scope.domains.q().where({ id: domainId }).first();
+  if (!domain?.verifiedAt) return false;
+  for (const d of await scope.domains.q().where({ isPrimary: true }).all()) await scope.domains.q().where({ id: d.id }).update({ isPrimary: false });
+  await scope.domains.q().where({ id: domainId }).update({ isPrimary: true });
   return true;
 }
 
+// Removing the primary hands the role to another verified domain, if any.
 export async function removeDomain(id: string, domainId: string): Promise<void> {
-  await orgScope(id).domains.q().where({ id: domainId }).delete();
+  const scope = orgScope(id);
+  const domain = await scope.domains.q().where({ id: domainId }).first();
+  if (!domain) return;
+  await scope.domains.q().where({ id: domainId }).delete();
+  await removeFromHosting(domain.host);
+  if (domain.isPrimary) {
+    const next = (await scope.domains.q().all()).find((d) => d.verifiedAt);
+    if (next) await scope.domains.q().where({ id: next.id }).update({ isPrimary: true });
+  }
+}
+
+function isPlatformDomain(host: string): boolean {
+  return hostConfigFromEnv().platformDomains.some((p) => host === p || host.endsWith(`.${p}`));
 }

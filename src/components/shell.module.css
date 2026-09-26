@@ -1324,3 +1324,89 @@
   font-weight: 600;
   color: var(--text);
 }
+
+/* Domain connector */
+.domainRow {
+  align-items: flex-start;
+}
+
+.domainFull {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.badgePending {
+  color: #b45309;
+  border-color: color-mix(in srgb, #b45309 35%, var(--border));
+}
+
+.dnsTable {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dnsHead,
+.dnsRow {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.dnsHead {
+  background: var(--surface-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.dnsRow + .dnsRow {
+  border-top: 1px solid var(--border);
+}
+
+.dnsCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dnsCell code {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.copyBtn {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .dnsHead {
+    display: none;
+  }
+  .dnsRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

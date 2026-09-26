@@ -16,7 +16,7 @@ export async function GET(_request: Request, ctx: RouteContext<'/manage/qr/[faci
   const scope = orgScope(org.id);
   const facility = await scope.facilities.q().where({ id: facilityId }).first();
   if (!facility) return new NextResponse('Not found', { status: 404 });
-  const primary = (await scope.domains.q().where({ isPrimary: true }).first())?.host ?? null;
+  const primary = (await scope.domains.q().where({ isPrimary: true }).where((d) => d.verifiedAt.isNotNull()).first())?.host ?? null;
   const base = orgBaseUrl({ slug: org.slug, primaryHost: primary }, (await headers()).get('host'));
   const url = facility.kind === 'parking' ? `${base}/book/parking` : `${base}/book/f/${facility.id}`;
   const svg = await QRCode.toString(url, { type: 'svg', margin: 2, width: 512 });

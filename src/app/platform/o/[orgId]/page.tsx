@@ -9,7 +9,11 @@ import { orgScope } from '../../../../lib/tenant/scope';
 import { getT } from '../../../../lib/i18n';
 import { ensurePlatformHost } from '../../../../lib/tenant/platform-only';
 import { requireAdmin } from '../../../../lib/auth/viewer';
-import { addDomainAction, removeDomainAction, saveBrandAction, saveOrgDetailsAction } from '../../../../lib/platform/actions';
+import { addDomainAction, makePrimaryAction, removeDomainAction, saveBrandAction, saveOrgDetailsAction, verifyDomainAction } from '../../../../lib/platform/actions';
+import DomainManager from '../../../../components/DomainManager';
+import { cnameTarget } from '../../../../lib/tenant/dns';
+import { hostingAutomated } from '../../../../lib/tenant/hosting';
+import { fmtWhen } from '../../../../lib/booking/format';
 
 export default async function OrgSettingsPage({ params, searchParams }: PageProps<'/platform/o/[orgId]'>) {
   const { orgId } = await params;
@@ -36,7 +40,7 @@ export default async function OrgSettingsPage({ params, searchParams }: PageProp
         {t('platform.title')}
       </Link>
       {sp['saved'] && <p className={styles.ok}>{t('brand.saved')}</p>}
-      {sp['error'] && <p className={styles.alert}>{sp['error'] === 'file' ? t('brand.error') : t('platform.error')}</p>}
+      {sp['error'] === 'file' && <p className={styles.alert}>{t('brand.error')}</p>}
       <p>
         <a className={styles.btn} href={`/platform/open/${org.id}`}>
           {t('platform.open')}
@@ -102,36 +106,17 @@ export default async function OrgSettingsPage({ params, searchParams }: PageProp
         </div>
       </form>
 
-      <section className={styles.card}>
-        <h2 className={styles.h2}>{t('brand.domains')}</h2>
-        <ul className={styles.list}>
-          <li className={styles.row}>
-            <span className={styles.rowText}>
-              <span className={styles.rowTitle}>{org.slug}.kellona.fi</span>
-            </span>
-          </li>
-          {domains.map((d) => (
-            <li key={d.id} className={styles.row}>
-              <span className={styles.rowText}>
-                <span className={styles.rowTitle}>{d.host}</span>
-              </span>
-              <form action={removeDomainAction}>
-                <input type="hidden" name="id" value={org.id} />
-                <input type="hidden" name="domainId" value={d.id} />
-                <button className={styles.btnDanger}>{t('manage.remove')}</button>
-              </form>
-            </li>
-          ))}
-        </ul>
-        <form action={addDomainAction} className={styles.form}>
-          <input type="hidden" name="id" value={org.id} />
-          <label className={styles.field}>
-            {t('brand.host')}
-            <input className={styles.input} name="host" required />
-          </label>
-          <button className={styles.btn}>{t('brand.addDomain')}</button>
-        </form>
-      </section>
+      <DomainManager
+        t={t}
+        domains={domains}
+        fallbackHost={`${org.slug}.kellona.fi`}
+        target={cnameTarget()}
+        hidden={{ id: org.id }}
+        actions={{ add: addDomainAction, verify: verifyDomainAction, primary: makePrimaryAction, remove: removeDomainAction }}
+        message={typeof sp['domain'] === 'string' ? sp['domain'] : typeof sp['error'] === 'string' && ['invalid', 'taken'].includes(sp['error']) ? sp['error'] : null}
+        hostingNote={hostingAutomated() ? t('domain.hostingAuto') : domains[0] ? t('domain.hostingManual', { host: domains[0].host }) : null}
+        fmt={(iso) => fmtWhen(iso, locale, org.timezone)}
+      />
     </Frame>
   );
 }

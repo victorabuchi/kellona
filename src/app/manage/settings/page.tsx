@@ -2,12 +2,15 @@ import type { Metadata } from 'next';
 import AppShell from '../../../components/AppShell';
 import BrandEditor from '../../../components/BrandEditor';
 import styles from '../../../components/app.module.css';
-import shell from '../../../components/shell.module.css';
 import { requireManager } from '../../../lib/auth/access';
 import { getT } from '../../../lib/i18n';
 import { db } from '../../../prisma/db';
 import { saveSettingsAction, saveSettingsBrandAction } from '../../../lib/manage/settings-actions';
-import { addDomainAction, removeDomainAction } from '../../../lib/platform/actions';
+import DomainManager from '../../../components/DomainManager';
+import { addOwnDomainAction, makeOwnPrimaryAction, removeOwnDomainAction, verifyOwnDomainAction } from '../../../lib/manage/settings-actions';
+import { cnameTarget } from '../../../lib/tenant/dns';
+import { hostingAutomated } from '../../../lib/tenant/hosting';
+import { fmtWhen } from '../../../lib/booking/format';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -16,7 +19,7 @@ export const metadata: Metadata = { title: 'Settings' };
 export default async function SettingsPage({ searchParams }: PageProps<'/manage/settings'>) {
   const sp = await searchParams;
   const { org, scope, viewer } = await requireManager();
-  const { t } = await getT(org);
+  const { t, locale } = await getT(org);
   const [row, brand, domains] = await Promise.all([
     db.orm.public.Organization.where({ id: org.id }).first(),
     scope.brand.q().first(),
@@ -34,7 +37,7 @@ export default async function SettingsPage({ searchParams }: PageProps<'/manage/
     <AppShell org={org} viewer={viewer} t={t} active="/manage/settings" title={t('settings.title')}>
       <p className={styles.lede}>{t('settings.lede')}</p>
       {sp['saved'] && <p className={styles.ok}>{t('settings.saved')}</p>}
-      {sp['error'] && <p className={styles.alert}>{sp['error'] === 'file' ? t('brand.error') : t('platform.error')}</p>}
+      {sp['error'] === 'file' && <p className={styles.alert}>{t('brand.error')}</p>}
 
       <section className={styles.card}>
         <h2 className={styles.h2}>{t('brand.title')}</h2>
@@ -90,42 +93,17 @@ export default async function SettingsPage({ searchParams }: PageProps<'/manage/
         </div>
       </form>
 
-      <section className={styles.card}>
-        <h2 className={styles.h2}>{t('brand.domains')}</h2>
-        <ul className={styles.list}>
-          <li className={styles.row}>
-            <span className={styles.rowTitle}>{org.slug}.kellona.fi</span>
-          </li>
-          {domains.map((d) => (
-            <li key={d.id} className={styles.row}>
-              <span className={styles.rowTitle}>{d.host}</span>
-              {isAdmin && (
-                <form action={removeDomainAction}>
-                  <input type="hidden" name="id" value={org.id} />
-                  <input type="hidden" name="domainId" value={d.id} />
-                  <input type="hidden" name="back" value="/manage/settings" />
-                  <button className={styles.btnDanger}>{t('manage.remove')}</button>
-                </form>
-              )}
-            </li>
-          ))}
-        </ul>
-        {isAdmin ? (
-          <form action={addDomainAction} className={styles.form}>
-            <input type="hidden" name="id" value={org.id} />
-            <input type="hidden" name="back" value="/manage/settings" />
-            <label className={styles.field}>
-              {t('brand.host')}
-              <input className={styles.input} name="host" required />
-            </label>
-            <button className={styles.btn}>{t('brand.addDomain')}</button>
-          </form>
-        ) : (
-          <p className={shell.blockMeta} style={{ height: 'auto', padding: '10px 12px' }}>
-            {t('settings.domainsNote')}
-          </p>
-        )}
-      </section>
+      <DomainManager
+        t={t}
+        domains={domains}
+        fallbackHost={`${org.slug}.kellona.fi`}
+        target={cnameTarget()}
+        hidden={{}}
+        actions={{ add: addOwnDomainAction, verify: verifyOwnDomainAction, primary: makeOwnPrimaryAction, remove: removeOwnDomainAction }}
+        message={typeof sp['domain'] === 'string' ? sp['domain'] : typeof sp['error'] === 'string' && ['invalid', 'taken'].includes(sp['error']) ? sp['error'] : null}
+        hostingNote={hostingAutomated() ? t('domain.hostingAuto') : isAdmin && domains[0] ? t('domain.hostingManual', { host: domains[0].host }) : null}
+        fmt={(iso) => fmtWhen(iso, locale, org.timezone)}
+      />
     </AppShell>
   );
 }

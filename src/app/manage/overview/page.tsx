@@ -119,7 +119,7 @@ export default async function OverviewPage() {
   const claimed = claims.filter((c) => spots.some((s) => s.id === c.facilityId)).length;
   const fmtAxis = (d: Date) => d.toLocaleDateString(locale === 'fi' ? 'fi-FI' : 'en-GB', { day: 'numeric', month: 'short' });
 
-  const primary = domains.find((d) => d.isPrimary)?.host ?? null;
+  const primary = domains.find((d) => d.isPrimary && d.verifiedAt)?.host ?? null;
   const address = orgBaseUrl({ slug: org.slug, primaryHost: primary }, (await headers()).get('host'));
   const isAdmin = viewer.kind === 'admin';
   const canManage = buildingIds === null;
@@ -129,7 +129,7 @@ export default async function OverviewPage() {
     { label: t('overview.step.building'), done: buildings.length > 0, href: '/manage' },
     { label: t('overview.step.facilities'), done: facilities.length > 0, href: buildings[0] ? `/manage/b/${buildings[0].id}#facilities` : '/manage' },
     { label: t('overview.step.residents'), done: residentCount > 0, href: '/manage/residents' },
-    { label: t('overview.step.address'), done: domains.length > 0, href: canManage ? settings : null },
+    { label: t('overview.step.address'), done: domains.some((d) => d.verifiedAt), href: canManage ? settings : null },
   ];
   const doneCount = steps.filter((s) => s.done).length;
 
@@ -149,7 +149,7 @@ export default async function OverviewPage() {
   const homeless = residents.filter((r) => !r.unitId).length;
   if (homeless && !buildingIds) checks.push({ sev: 'warning', cat: 'data', title: t('overview.c.homeless'), desc: t('overview.c.homelessD', { n: homeless }), href: '/manage/residents' });
   if (!brand?.logoLightUrl) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.logo'), desc: t('overview.c.logoD'), href: canManage ? settings : null });
-  if (!domains.length) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.address'), desc: t('overview.c.addressD', { host: `${org.slug}.kellona.fi` }), href: canManage ? settings : null });
+  if (!domains.some((d) => d.verifiedAt)) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.address'), desc: t('overview.c.addressD', { host: `${org.slug}.kellona.fi` }), href: canManage ? settings : null });
 
   const first = buildings[0];
   const quick = [
