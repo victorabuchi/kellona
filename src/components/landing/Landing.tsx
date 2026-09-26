@@ -174,10 +174,8 @@ export default function Landing({ t, locale, signedIn, contactEmail }: { t: T; l
           <div className={styles.glowRow} aria-hidden="true">
             {GLOW.map(([kind, color], i) => (
               <div key={kind} style={{ marginBottom: [0, 18, -6, 10, -10, 14, -4][i] }}>
-                <div className={styles.glowItem} style={{ animationDelay: `${i * 0.5}s` }}>
-                  <div className={styles.glowTile} style={{ ['--glow' as string]: color }}>
-                    <KindIcon kind={kind} size={28} />
-                  </div>
+                <div className={styles.glowTile} style={{ ['--glow' as string]: color }}>
+                  <KindIcon kind={kind} size={28} />
                 </div>
               </div>
             ))}

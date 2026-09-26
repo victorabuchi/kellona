@@ -280,9 +280,6 @@
   margin: 52px auto 0;
 }
 
-.glowItem {
-  animation: floatY 4.5s ease-in-out infinite;
-}
 
 .glowTile {
   width: 64px;
@@ -296,18 +293,7 @@
   box-shadow: 0 0 18px -2px color-mix(in srgb, var(--glow) 55%, transparent), 0 0 40px -6px color-mix(in srgb, var(--glow) 40%, transparent);
 }
 
-@keyframes floatY {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .glowItem,
   .fadeUp {
     animation: none;
   }
