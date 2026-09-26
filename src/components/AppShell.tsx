@@ -2,6 +2,8 @@ import Link from 'next/link';
 import styles from './shell.module.css';
 import Dropdown from './Dropdown';
 import ThemeSwitcher from './ThemeSwitcher';
+import CommandPalette, { type PaletteItem } from './CommandPalette';
+import { orgScope } from '../lib/tenant/scope';
 import { db } from '../prisma/db';
 import type { OrgContext } from '../lib/tenant/load';
 import type { Viewer } from '../lib/auth/viewer';
@@ -80,6 +82,46 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
+// What the search palette can jump to in this context. Staff only see their
+// own buildings; residents only get pages.
+async function paletteItems(
+  viewer: Viewer,
+  org: OrgContext | null,
+  t: T,
+  pages: Item[],
+  orgs: Array<{ id: string; name: string; slug: string }>,
+): Promise<PaletteItem[]> {
+  const items: PaletteItem[] = pages.map((p) => ({ group: t('search.pages'), label: t(p.label), href: p.href, external: p.external }));
+  if (viewer.kind === 'admin') {
+    for (const o of orgs) items.push({ group: t('search.orgs'), label: o.name, hint: o.slug, href: `/platform/open/${o.id}`, external: true });
+  }
+  if (!org || viewer.kind === 'resident') return items;
+  const scope = orgScope(org.id);
+  const limited = viewer.kind === 'staff' && viewer.role !== 'manager';
+  const allowed = limited ? new Set((await scope.staffBuildings.q().where({ staffId: viewer.id }).all()).map((l) => l.buildingId)) : null;
+  const [buildings, facilities, units, residents] = await Promise.all([
+    scope.buildings.q().orderBy((b) => b.name.asc()).all(),
+    scope.facilities.q().orderBy((f) => f.name.asc()).all(),
+    scope.units.q().all(),
+    scope.residents.q().where({ status: 'active' }).orderBy((r) => r.name.asc()).limit(400).all(),
+  ]);
+  const visible = buildings.filter((b) => !allowed || allowed.has(b.id));
+  const names = new Map(visible.map((b) => [b.id, b.name]));
+  const unitBuilding = new Map(units.map((u) => [u.id, u]));
+  for (const b of visible) items.push({ group: t('search.buildings'), label: b.name, hint: b.address ?? undefined, href: `/manage/b/${b.id}` });
+  for (const f of facilities) {
+    if (!names.has(f.buildingId)) continue;
+    items.push({ group: t('search.facilities'), label: f.name, hint: names.get(f.buildingId), href: `/manage/b/${f.buildingId}#facilities` });
+  }
+  for (const r of residents) {
+    const unit = r.unitId ? unitBuilding.get(r.unitId) : undefined;
+    if (allowed && (!unit || !allowed.has(unit.buildingId))) continue;
+    const where = unit ? `${names.get(unit.buildingId) ?? ''} ${unit.code}`.trim() : r.email;
+    items.push({ group: t('search.residents'), label: r.name, hint: `${where} · ${r.email}`, href: `/manage/residents?q=${encodeURIComponent(r.email)}` });
+  }
+  return items;
+}
+
 const CHEVRONS = (
   <svg className={styles.chevrons} viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="m7 9 5-5 5 5M7 15l5 5 5-5" />
@@ -136,6 +178,7 @@ export default async function AppShell({
   const theme = await readTheme();
   const orgs = isAdmin ? await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all() : [];
   const tabs = [...nav.sections.flat(), ...nav.bottom.filter((i) => !i.external)].slice(0, 5);
+  const palette = await paletteItems(viewer, org, t, [...nav.sections.flat(), ...nav.bottom], orgs);
 
   const role =
     viewer.kind === 'admin' ? t('account.role.admin') : viewer.kind === 'resident' ? t('account.role.resident') : viewer.role === 'manager' ? t('account.role.manager') : t('account.role.staff');
@@ -213,6 +256,15 @@ export default async function AppShell({
         )}
 
         <div className={styles.topRight}>
+          <CommandPalette
+            items={palette}
+            labels={{
+              button: t('search.button'),
+              placeholder: org ? t('search.placeholder') : t('search.placeholderPlatform'),
+              empty: t('search.empty'),
+              hint: t('search.hint'),
+            }}
+          />
           <Dropdown label={t('nav.userMenu')} align="right" buttonClass={styles.avatar} button={<span aria-hidden="true">{initials(viewer.name) || '?'}</span>}>
             <div className={styles.popHead}>
               <strong>{viewer.name}</strong>

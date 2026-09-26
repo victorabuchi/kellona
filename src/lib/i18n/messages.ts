@@ -447,6 +447,16 @@ const en = {
   'overview.open': 'Open',
   'overview.recent': 'Recent bookings',
   'overview.noRecent': 'No bookings yet.',
+  'search.button': 'Search...',
+  'search.placeholder': 'Search pages, buildings, facilities, residents',
+  'search.placeholderPlatform': 'Search organizations and pages',
+  'search.empty': 'No results.',
+  'search.pages': 'Pages',
+  'search.orgs': 'Organizations',
+  'search.buildings': 'Buildings',
+  'search.facilities': 'Facilities',
+  'search.residents': 'Residents',
+  'search.hint': 'to open',
   'meta.description': 'Booking for {org} residents.',
 } as const;
 
@@ -892,6 +902,16 @@ const fi: Messages = {
   'overview.open': 'Avaa',
   'overview.recent': 'Viimeisimmät varaukset',
   'overview.noRecent': 'Ei vielä varauksia.',
+  'search.button': 'Hae...',
+  'search.placeholder': 'Hae sivuja, kiinteistöjä, tiloja, asukkaita',
+  'search.placeholderPlatform': 'Hae organisaatioita ja sivuja',
+  'search.empty': 'Ei tuloksia.',
+  'search.pages': 'Sivut',
+  'search.orgs': 'Organisaatiot',
+  'search.buildings': 'Kiinteistöt',
+  'search.facilities': 'Tilat',
+  'search.residents': 'Asukkaat',
+  'search.hint': 'avaa',
   'meta.description': 'Varaukset {org}:n asukkaille.',
 };
 

@@ -892,3 +892,149 @@
   background: linear-gradient(90deg, var(--brand), var(--accent));
   border-radius: 999px;
 }
+
+/* Search and command palette */
+.searchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.searchBtn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 25%, var(--border));
+}
+
+.searchLabel,
+.searchBtn .kbd {
+  display: none;
+}
+
+@media (min-width: 700px) {
+  .searchBtn {
+    width: 220px;
+    padding: 0 8px 0 12px;
+  }
+  .searchLabel {
+    display: inline;
+    flex: 1;
+    text-align: left;
+  }
+  .searchBtn .kbd {
+    display: inline-flex;
+  }
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.palette {
+  width: min(640px, calc(100vw - 24px));
+  max-height: min(560px, calc(100dvh - 80px));
+  margin: 10vh auto auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 40px 100px -30px rgba(15, 17, 20, 0.5);
+  overflow: hidden;
+}
+
+.palette[open] {
+  display: flex;
+  flex-direction: column;
+  animation: pop 0.14s ease both;
+}
+
+.palette::backdrop {
+  background: var(--overlay);
+  backdrop-filter: blur(3px);
+}
+
+.paletteSearch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.paletteSearch input {
+  flex: 1;
+  min-width: 0;
+  height: 54px;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.paletteList {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.paletteItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.paletteItem[aria-selected='true'] {
+  background: var(--surface-2);
+}
+
+.paletteHint {
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paletteEnter {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.paletteEmpty {
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
