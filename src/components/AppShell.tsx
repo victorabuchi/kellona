@@ -29,6 +29,10 @@ const ICONS = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z',
   gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',
   back: 'M19 12H5M12 19l-7-7 7-7',
+  list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  alert: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
+  help: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01',
+  phone: 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z',
   badge: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7ZM17 3l2 2 3-3',
 };
 type IconName = keyof typeof ICONS;
@@ -48,7 +52,22 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
 // organization's pages, with a way back to all organizations.
 function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Nav {
   const account: Item = { href: '/account', label: 'nav.account', icon: 'user' };
-  if (viewer.kind === 'resident') return { sections: [[{ href: '/book', label: 'nav.book', icon: 'book' }]], bottom: [account] };
+  if (viewer.kind === 'resident') {
+    return {
+      sections: [
+        [
+          { href: '/book', label: 'nav.book', icon: 'book' },
+          { href: '/book/mine', label: 'nav.myBookings', icon: 'list' },
+        ],
+        [
+          { href: '/book/report', label: 'nav.report', icon: 'alert' },
+          { href: '/book/contact', label: 'nav.contact', icon: 'phone' },
+          { href: '/book/help', label: 'nav.help', icon: 'help' },
+        ],
+      ],
+      bottom: [account],
+    };
+  }
   if (!org) {
     return {
       sections: [
@@ -66,6 +85,7 @@ function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Na
     { href: '/manage/residents', label: 'nav.residents', icon: 'people' },
   ];
   if (canManage) people.push({ href: '/manage/staff', label: 'nav.staff', icon: 'badge' });
+  people.push({ href: '/manage/reports', label: 'nav.reports', icon: 'alert' });
   const top: Item[] = [{ href: '/manage/overview', label: 'nav.overview', icon: 'home' }];
   if (viewer.kind === 'admin') top.push({ href: '/manage/booking', label: 'nav.book', icon: 'book' });
   const sections: Item[][] = [top, people];
@@ -132,7 +152,8 @@ const CHEVRONS = (
 );
 
 function SideItem({ item, active, t, className }: { item: Item; active: string; t: T; className: string }) {
-  const current = !item.external && (active === item.href || (item.href !== '/manage' && active.startsWith(`${item.href}/`)));
+  // Hubs (/book, /manage) only light up on themselves; their sub pages have their own items.
+  const current = !item.external && (active === item.href || (item.href !== '/manage' && item.href !== '/book' && active.startsWith(`${item.href}/`)));
   const body = (
     <>
       <Icon name={item.icon} />
@@ -180,7 +201,9 @@ export default async function AppShell({
   const home = nav.sections[0]![0]!.href;
   const theme = await readTheme();
   const orgs = isAdmin ? await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all() : [];
-  const tabs = [...nav.sections.flat(), ...nav.bottom.filter((i) => !i.external)].slice(0, 5);
+  // Phones fit five tabs: the first four pages plus Account (which links the rest).
+  const allTabs = [...nav.sections.flat(), ...nav.bottom.filter((i) => !i.external)];
+  const tabs = allTabs.length > 5 ? [...nav.sections.flat().slice(0, 4), ...nav.bottom.filter((i) => !i.external).slice(0, 1)] : allTabs;
   const palette = await paletteItems(viewer, org, t, [...nav.sections.flat(), ...nav.bottom], orgs);
 
   const role =

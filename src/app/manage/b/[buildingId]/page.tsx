@@ -9,6 +9,7 @@ import type { MessageKey } from '../../../../lib/i18n/messages';
 import { AMENITY_KINDS } from '../../../../lib/booking/kinds';
 import { fmtWhen } from '../../../../lib/booking/format';
 import { nowMs } from '../../../../lib/booking/time';
+import { setOutOfOrderAction } from '../../../../lib/manage/support-actions';
 import { addFacilityAction, addUnitAction, removeFacilityAction, saveFacilityAction, staffCancelBookingAction } from '../../../../lib/manage/actions';
 import type { FacilityRow } from '../../../../lib/booking/engine';
 
@@ -58,13 +59,34 @@ export default async function BuildingPage({ params }: PageProps<'/manage/b/[bui
             {facilities.map((f) => (
               <li key={f.id} className={styles.row}>
                 <span className={styles.rowText}>
-                  <span className={styles.rowTitle}>{f.name}</span>
+                  <span className={styles.rowTitle}>
+                    {f.name} {f.outOfOrder && <span className={styles.alert} style={{ padding: '1px 8px', fontSize: 12 }}>{t('outOfOrder.label')}</span>}
+                  </span>
                   <span className={styles.muted}>
                     {t(`kind.${f.kind}` as MessageKey)}
                     {f.kind !== 'parking' && ` · ${f.turnStartHours ? f.turnStartHours.split(',').map((h) => `${h}:00`).join(', ') : `${f.openHour}:00-${f.closeHour}:00`}`}
                   </span>
                 </span>
                 <span className={styles.actions}>
+                  {f.outOfOrder ? (
+                    <form action={setOutOfOrderAction}>
+                      <input type="hidden" name="buildingId" value={buildingId} />
+                      <input type="hidden" name="id" value={f.id} />
+                      <input type="hidden" name="on" value="0" />
+                      <button className={styles.btn}>{t('outOfOrder.clear')}</button>
+                    </form>
+                  ) : (
+                    <details className={styles.inline}>
+                      <summary className={styles.btnGhost}>{t('outOfOrder.toggle')}</summary>
+                      <form action={setOutOfOrderAction} className={styles.form} style={{ marginTop: 8 }}>
+                        <input type="hidden" name="buildingId" value={buildingId} />
+                        <input type="hidden" name="id" value={f.id} />
+                        <input type="hidden" name="on" value="1" />
+                        <input className={styles.input} name="note" placeholder={t('outOfOrder.note')} maxLength={240} />
+                        <button className={styles.btnDanger}>{t('outOfOrder.toggle')}</button>
+                      </form>
+                    </details>
+                  )}
                   <a className={styles.btnGhost} href={`/manage/qr/${f.id}`} target="_blank" rel="noreferrer">
                     {t('manage.qr')}
                   </a>

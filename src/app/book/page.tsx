@@ -16,7 +16,7 @@ import { checkInPhase } from '../../lib/booking/checkin';
 
 export const metadata: Metadata = { title: 'Booking' };
 
-type Card = { key: string; kind: AmenityKind; name: string; blurb: string; href: string };
+type Card = { key: string; kind: AmenityKind; name: string; blurb: string; href: string; out?: boolean };
 
 export default async function BookHubPage() {
   const { org, scope, viewer } = await requireResident();
@@ -51,11 +51,12 @@ export default async function BookHubPage() {
     if (!available.has(kind)) continue;
     const first = facilities.find((f) => f.kind === kind)!;
     const count = amenities.find((a) => a.kind === kind)!.count;
-    cards.push({ key: kind, kind, name: t(`kind.${kind}`), blurb: t(`blurb.${kind}`, { n: count }), href: kind === 'parking' ? '/book/parking' : `/book/f/${first.id}` });
+    const allOut = facilities.filter((f) => f.kind === kind).every((f) => f.outOfOrder);
+    cards.push({ key: kind, kind, name: t(`kind.${kind}`), blurb: allOut ? (first.outOfOrderNote ?? t('outOfOrder.lede')) : t(`blurb.${kind}`, { n: count }), href: kind === 'parking' ? '/book/parking' : `/book/f/${first.id}`, out: allOut });
   }
   for (const f of facilities) {
     if (!isSpaceKind(f.kind) || !available.has(f.kind)) continue;
-    cards.push({ key: f.id, kind: f.kind, name: f.name, blurb: f.description || t('blurb.space', { n: f.capacity }), href: `/book/f/${f.id}` });
+    cards.push({ key: f.id, kind: f.kind, name: f.name, blurb: f.outOfOrder ? (f.outOfOrderNote ?? t('outOfOrder.lede')) : f.description || t('blurb.space', { n: f.capacity }), href: `/book/f/${f.id}`, out: f.outOfOrder });
   }
 
   // Group sizes for my bookings, and bookings I was invited to.
@@ -117,7 +118,9 @@ export default async function BookHubPage() {
                 <span className={styles.tileIcon}>
                   <KindIcon kind={c.kind} />
                 </span>
-                <span className={styles.tileName}>{c.name}</span>
+                <span className={styles.tileName}>
+                  {c.name} {c.out && <span className={styles.alert} style={{ padding: '1px 8px', fontSize: 12 }}>{t('outOfOrder.label')}</span>}
+                </span>
                 <span className={styles.muted}>{c.blurb}</span>
               </Link>
             ))}

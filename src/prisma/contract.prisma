@@ -45,6 +45,9 @@ model Organization {
   pushSubscriptions   PushSubscription[]
   releases            BookingRelease[]
   watches             SlotWatch[]
+  contacts            OrgContact[]
+  helpArticles        HelpArticle[]
+  reports             FaultReport[]
 
   @@map("organization")
 }
@@ -155,6 +158,7 @@ model Resident {
   pushSubscriptions PushSubscription[]
   releases          BookingRelease[]
   watches           SlotWatch[]
+  reports           FaultReport[]
 
   @@unique([organizationId, email])
   @@index([unitId])
@@ -240,12 +244,16 @@ model Facility {
   // stays open this many minutes after it. Unclaimed bookings are released.
   checkInOpensMinutes Int              @default(0)
   checkInGraceMinutes Int              @default(15)
+  // Staff switch: blocks new bookings and shows residents the note.
+  outOfOrder         Boolean           @default(false)
+  outOfOrderNote     String?
   sortOrder          Int               @default(0)
   createdAt          TimestamptzString @default(now())
   bookings           Booking[]
   parkingClaim       ParkingClaim?
   releases           BookingRelease[]
   watches            SlotWatch[]
+  reports            FaultReport[]
 
   @@unique([buildingId, name])
   @@index([organizationId])
@@ -430,4 +438,61 @@ model SlotWatch {
   @@unique([facilityId, startsAt, residentId])
   @@index([residentId])
   @@map("slot_watch")
+}
+
+// Ways to reach the organization, shown to residents on the Contact page.
+model OrgContact {
+  id             Uuid         @id @default(uuid())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  title          String
+  description    String?
+  phone          String?
+  email          String?
+  url            String?
+  hours          String?
+  // Shown first and highlighted, for example a 24/7 maintenance line.
+  emergency      Boolean      @default(false)
+  sortOrder      Int          @default(0)
+
+  @@index([organizationId])
+  @@map("org_contact")
+}
+
+// House rules and answers the organization writes for its residents.
+model HelpArticle {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  locale         String            @default("fi")
+  title          String
+  body           String
+  sortOrder      Int               @default(0)
+  updatedAt      TimestamptzString @default(now())
+
+  @@index([organizationId])
+  @@map("help_article")
+}
+
+// A resident's report about a facility or their building. 'new' | 'in_progress' | 'done'.
+model FaultReport {
+  id             Uuid               @id @default(uuid())
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  resident       Resident           @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid
+  facility       Facility?          @relation(fields: [facilityId], references: [id], onDelete: SetNull)
+  facilityId     Uuid?
+  buildingId     Uuid?
+  category       String             @default("broken")
+  message        String
+  status         String             @default("new")
+  staffNote      String?
+  createdAt      TimestamptzString  @default(now())
+  updatedAt      TimestamptzString  @default(now())
+  resolvedAt     TimestamptzString?
+
+  @@index([organizationId, status])
+  @@index([residentId])
+  @@map("fault_report")
 }

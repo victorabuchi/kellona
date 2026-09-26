@@ -237,6 +237,29 @@ try {
   for (const id of [ciOpen.id, ciEarlyB.id]) await s.bookings.q().where({ id }).delete();
   await s.facilities.q().where({ id: laundry.id }).update({ checkInOpensMinutes: 0 });
 
+  // Support: report a problem, staff reply and mark out of order, booking blocked.
+  const reportPage = await http('GET', host, '/book/report', { cookie: c1 });
+  const sent = await http('POST', host, '/book/report', { cookie: c1, form: { [actionIn(reportPage.body, 'name="message"')]: '', facilityId: laundry.id, category: 'broken', message: 'Machine stops mid program' } });
+  const report = await s.reports.q().where({ residentId: r1.id }).first();
+  check('resident sends a problem report', sent.location.includes('sent=1') && report?.facilityId === laundry.id && report.status === 'new', sent.location);
+  const inbox = await http('GET', host, '/manage/reports', { cookie: admin });
+  check('staff see the report in their inbox', inbox.body.includes('Machine stops mid program'));
+  await http('POST', host, '/manage/reports', { cookie: admin, form: { [actionIn(inbox.body, `value="${report!.id}"`)]: '', id: report!.id, status: 'in_progress', staffNote: 'Technician on Monday', markOutOfOrder: '1', show: 'open' } });
+  const updated = await s.reports.q().where({ id: report!.id }).first();
+  const broken = await s.facilities.q().where({ id: laundry.id }).first();
+  check('staff update the status, reply and mark the facility out of order', updated?.status === 'in_progress' && updated.staffNote === 'Technician on Monday' && broken?.outOfOrder === true);
+  const residentView = await http('GET', host, '/book/report', { cookie: c1 });
+  check('resident sees the new status and reply', residentView.body.includes('Technician on Monday') && residentView.body.includes('In progress'));
+  const blocked = await book(c1, laundry.id, at(addDays(tomorrow, 2), 12));
+  check('an out-of-order facility cannot be booked', param(blocked.location, 'error') === 'outOfOrder', blocked.location);
+  await s.facilities.q().where({ id: laundry.id }).update({ outOfOrder: false, outOfOrderNote: null });
+  await s.contacts.create({ title: 'Maintenance', phone: '+358 40 000 0000', emergency: true });
+  await s.help.create({ title: 'Laundry rules', body: 'Be nice.', locale: 'en' });
+  for (const [path, text] of [['/book/contact', 'Maintenance'], ['/book/help', 'Laundry rules'], ['/book/mine', 'My bookings']] as const) {
+    const res = await http('GET', host, path, { cookie: c1 });
+    check(`resident page ${path} shows its content`, res.status === 200 && res.body.includes(text), String(res.status));
+  }
+
   // Staff page and organization settings.
   const staffPage = await http('GET', host, '/manage/staff', { cookie: admin });
   check('staff page loads', staffPage.status === 200);

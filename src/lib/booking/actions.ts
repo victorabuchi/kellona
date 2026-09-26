@@ -33,6 +33,7 @@ export async function bookAction(formData: FormData) {
   }
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
   if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect(facilityUrl(facilityId, { day, error: 'notAvailable' }));
+  if ((facility as { outOfOrder?: boolean }).outOfOrder) redirect(facilityUrl(facilityId, { day, error: 'outOfOrder' }));
 
   let participantIds: string[] = [];
   if (facility.capacity > 1) {

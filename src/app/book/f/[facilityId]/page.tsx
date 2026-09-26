@@ -58,7 +58,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
   if (!ctx) redirect('/book');
-  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number; maxRepeatWeeks: number; checkInOpensMinutes: number; checkInGraceMinutes: number }) | null;
+  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number; maxRepeatWeeks: number; checkInOpensMinutes: number; checkInGraceMinutes: number; outOfOrder: boolean; outOfOrderNote: string | null }) | null;
   if (!facility || !isAmenityKind(facility.kind) || facility.kind === 'parking') redirect('/book');
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
   if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect('/book');
@@ -110,7 +110,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
       const end = new Date(start);
       end.setHours(end.getHours() + slotLen);
       const booking = bookings.find((b) => overlaps(start.getTime(), end.getTime(), new Date(b.startsAt).getTime(), new Date(b.endsAt).getTime()));
-      const closed = start.getTime() < now || start.getTime() > lastBookable;
+      const closed = start.getTime() < now || start.getTime() > lastBookable || facility.outOfOrder;
       const state: BoardSlot['state'] = booking ? (booking.residentId === viewer.id ? 'mine' : 'taken') : closed ? 'closed' : 'free';
       const busyAfter = bookings.map((b) => new Date(b.startsAt).getTime()).filter((ms) => ms > start.getTime());
       const lengths = state === 'free' ? lengthOptions(facility, h).filter((n) => busyAfter.every((ms) => start.getTime() + n * 3_600_000 <= ms)) : [];
@@ -217,6 +217,12 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
         )}
       </div>
 
+      {facility.outOfOrder && (
+        <div className={app.alert} role="status">
+          <strong>{t('outOfOrder.label')}.</strong> {facility.outOfOrderNote ?? t('outOfOrder.lede')}{' '}
+          <Link href={`/book/report?facility=${facility.id}`}>{t('nav.report')}</Link>
+        </div>
+      )}
       {error && <p className={app.alert}>{t(`book.error.${error}` as MessageKey)}</p>}
       {one('skipped') && <p className={app.alert}>{t('book.skipped', { n: one('skipped') })}</p>}
 

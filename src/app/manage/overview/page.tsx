@@ -148,6 +148,11 @@ export default async function OverviewPage() {
       }
     }
   }
+  const openReports = (await scope.reports.q().where((r) => r.status.neq('done')).all()).filter((r) => !buildingIds || (r.buildingId && buildingIds.includes(r.buildingId)));
+  if (openReports.length) checks.unshift({ sev: 'warning', cat: 'data', title: t('overview.c.reports'), desc: t('overview.c.reportsD', { n: openReports.length }), href: '/manage/reports' });
+  for (const f of facilities.filter((x) => x.outOfOrder)) {
+    checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.outOfOrder'), desc: t('overview.c.outOfOrderD', { name: `${f.name} (${buildings.find((b) => b.id === f.buildingId)?.name ?? ''})` }), href: `/manage/b/${f.buildingId}#facilities` });
+  }
   const homeless = residents.filter((r) => !r.unitId).length;
   if (homeless && !buildingIds) checks.push({ sev: 'warning', cat: 'data', title: t('overview.c.homeless'), desc: t('overview.c.homelessD', { n: homeless }), href: '/manage/residents' });
   if (!brand?.logoLightUrl) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.logo'), desc: t('overview.c.logoD'), href: canManage ? settings : null });

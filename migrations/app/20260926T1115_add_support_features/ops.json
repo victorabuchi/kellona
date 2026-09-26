@@ -1,0 +1,647 @@
+[
+  {
+    "id": "table.fault_report",
+    "label": "Create table \"fault_report\"",
+    "summary": "Creates table \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"fault_report\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"fault_report\"",
+        "sql": "CREATE TABLE \"public\".\"fault_report\" (\n  \"buildingId\" uuid,\n  \"category\" text DEFAULT 'broken' NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"facilityId\" uuid,\n  \"id\" uuid NOT NULL,\n  \"message\" text NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"residentId\" uuid NOT NULL,\n  \"resolvedAt\" timestamptz,\n  \"staffNote\" text,\n  \"status\" text DEFAULT 'new' NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"fault_report\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.help_article",
+    "label": "Create table \"help_article\"",
+    "summary": "Creates table \"help_article\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "help_article"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"help_article\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"help_article\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"help_article\"",
+        "sql": "CREATE TABLE \"public\".\"help_article\" (\n  \"body\" text NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"locale\" text DEFAULT 'fi' NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"title\" text NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"help_article\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"help_article\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.org_contact",
+    "label": "Create table \"org_contact\"",
+    "summary": "Creates table \"org_contact\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "org_contact"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"org_contact\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"org_contact\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"org_contact\"",
+        "sql": "CREATE TABLE \"public\".\"org_contact\" (\n  \"description\" text,\n  \"email\" text,\n  \"emergency\" bool DEFAULT false NOT NULL,\n  \"hours\" text,\n  \"id\" uuid NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"phone\" text,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"title\" text NOT NULL,\n  \"url\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"org_contact\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"org_contact\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.facility.outOfOrder",
+    "label": "Add column \"outOfOrder\" to \"facility\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "outOfOrder",
+        "table": "facility"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"outOfOrder\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "outOfOrder"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"outOfOrder\"",
+        "sql": "ALTER TABLE \"public\".\"facility\" ADD COLUMN \"outOfOrder\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"outOfOrder\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "outOfOrder"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.facility.outOfOrderNote",
+    "label": "Add column \"outOfOrderNote\" to \"facility\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "outOfOrderNote",
+        "table": "facility"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"outOfOrderNote\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "outOfOrderNote"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"outOfOrderNote\"",
+        "sql": "ALTER TABLE \"public\".\"facility\" ADD COLUMN \"outOfOrderNote\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"outOfOrderNote\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "outOfOrderNote"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.fault_report.fault_report_facilityId_idx_3710d8c1",
+    "label": "Create index \"fault_report_facilityId_idx_3710d8c1\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "fault_report_facilityId_idx_3710d8c1",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"fault_report_facilityId_idx_3710d8c1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_facilityId_idx_3710d8c1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"fault_report_facilityId_idx_3710d8c1\"",
+        "sql": "CREATE INDEX \"fault_report_facilityId_idx_3710d8c1\" ON \"public\".\"fault_report\" (\"facilityId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"fault_report_facilityId_idx_3710d8c1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_facilityId_idx_3710d8c1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.fault_report.fault_report_organizationId_idx_2e17ef41",
+    "label": "Create index \"fault_report_organizationId_idx_2e17ef41\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "fault_report_organizationId_idx_2e17ef41",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"fault_report_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"fault_report_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"fault_report_organizationId_idx_2e17ef41\" ON \"public\".\"fault_report\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"fault_report_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.fault_report.fault_report_organizationId_status_idx_21af5e82",
+    "label": "Create index \"fault_report_organizationId_status_idx_21af5e82\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "fault_report_organizationId_status_idx_21af5e82",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"fault_report_organizationId_status_idx_21af5e82\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_organizationId_status_idx_21af5e82\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"fault_report_organizationId_status_idx_21af5e82\"",
+        "sql": "CREATE INDEX \"fault_report_organizationId_status_idx_21af5e82\" ON \"public\".\"fault_report\" (\"organizationId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"fault_report_organizationId_status_idx_21af5e82\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_organizationId_status_idx_21af5e82\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.fault_report.fault_report_residentId_idx_9d41a33b",
+    "label": "Create index \"fault_report_residentId_idx_9d41a33b\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "fault_report_residentId_idx_9d41a33b",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"fault_report_residentId_idx_9d41a33b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_residentId_idx_9d41a33b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"fault_report_residentId_idx_9d41a33b\"",
+        "sql": "CREATE INDEX \"fault_report_residentId_idx_9d41a33b\" ON \"public\".\"fault_report\" (\"residentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"fault_report_residentId_idx_9d41a33b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"fault_report_residentId_idx_9d41a33b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.help_article.help_article_organizationId_idx_2e17ef41",
+    "label": "Create index \"help_article_organizationId_idx_2e17ef41\" on \"help_article\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "help_article_organizationId_idx_2e17ef41",
+        "table": "help_article"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"help_article_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"help_article_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"help_article_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"help_article_organizationId_idx_2e17ef41\" ON \"public\".\"help_article\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"help_article_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"help_article_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.org_contact.org_contact_organizationId_idx_2e17ef41",
+    "label": "Create index \"org_contact_organizationId_idx_2e17ef41\" on \"org_contact\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "org_contact_organizationId_idx_2e17ef41",
+        "table": "org_contact"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"org_contact_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"org_contact_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"org_contact_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"org_contact_organizationId_idx_2e17ef41\" ON \"public\".\"org_contact\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"org_contact_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"org_contact_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.fault_report.fault_report_organizationId_fkey",
+    "label": "Add foreign key \"fault_report_organizationId_fkey\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "fault_report_organizationId_fkey",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"fault_report_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "fault_report_organizationId_fkey",
+          "public",
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"fault_report_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"fault_report\"\nADD CONSTRAINT \"fault_report_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"fault_report_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "fault_report_organizationId_fkey",
+          "public",
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.fault_report.fault_report_residentId_fkey",
+    "label": "Add foreign key \"fault_report_residentId_fkey\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "fault_report_residentId_fkey",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"fault_report_residentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "fault_report_residentId_fkey",
+          "public",
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"fault_report_residentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"fault_report\"\nADD CONSTRAINT \"fault_report_residentId_fkey\"\nFOREIGN KEY (\"residentId\")\nREFERENCES \"public\".\"resident\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"fault_report_residentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "fault_report_residentId_fkey",
+          "public",
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.fault_report.fault_report_facilityId_fkey",
+    "label": "Add foreign key \"fault_report_facilityId_fkey\" on \"fault_report\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "fault_report_facilityId_fkey",
+        "table": "fault_report"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"fault_report_facilityId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "fault_report_facilityId_fkey",
+          "public",
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"fault_report_facilityId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"fault_report\"\nADD CONSTRAINT \"fault_report_facilityId_fkey\"\nFOREIGN KEY (\"facilityId\")\nREFERENCES \"public\".\"facility\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"fault_report_facilityId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "fault_report_facilityId_fkey",
+          "public",
+          "\"public\".\"fault_report\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.help_article.help_article_organizationId_fkey",
+    "label": "Add foreign key \"help_article_organizationId_fkey\" on \"help_article\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "help_article_organizationId_fkey",
+        "table": "help_article"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"help_article_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "help_article_organizationId_fkey",
+          "public",
+          "\"public\".\"help_article\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"help_article_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"help_article\"\nADD CONSTRAINT \"help_article_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"help_article_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "help_article_organizationId_fkey",
+          "public",
+          "\"public\".\"help_article\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.org_contact.org_contact_organizationId_fkey",
+    "label": "Add foreign key \"org_contact_organizationId_fkey\" on \"org_contact\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "org_contact_organizationId_fkey",
+        "table": "org_contact"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"org_contact_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "org_contact_organizationId_fkey",
+          "public",
+          "\"public\".\"org_contact\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"org_contact_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"org_contact\"\nADD CONSTRAINT \"org_contact_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"org_contact_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "org_contact_organizationId_fkey",
+          "public",
+          "\"public\".\"org_contact\""
+        ]
+      }
+    ]
+  }
+]

@@ -6,6 +6,7 @@ import { requireManager } from '../../../lib/auth/access';
 import { getT } from '../../../lib/i18n';
 import { db } from '../../../prisma/db';
 import { saveSettingsAction, saveSettingsBrandAction } from '../../../lib/manage/settings-actions';
+import SupportEditors from '../../../components/SupportEditors';
 import DomainManager from '../../../components/DomainManager';
 import { addOwnDomainAction, makeOwnPrimaryAction, removeOwnDomainAction, verifyOwnDomainAction } from '../../../lib/manage/settings-actions';
 import { cnameTarget } from '../../../lib/tenant/dns';
@@ -20,10 +21,12 @@ export default async function SettingsPage({ searchParams }: PageProps<'/manage/
   const sp = await searchParams;
   const { org, scope, viewer } = await requireManager();
   const { t, locale } = await getT(org);
-  const [row, brand, domains] = await Promise.all([
+  const [row, brand, domains, contacts, articles] = await Promise.all([
     db.orm.public.Organization.where({ id: org.id }).first(),
     scope.brand.q().first(),
     scope.domains.q().all(),
+    scope.contacts.q().orderBy((c) => c.sortOrder.asc()).all(),
+    scope.help.q().orderBy((a) => a.sortOrder.asc()).all(),
   ]);
   const isAdmin = viewer.kind === 'admin';
   const text = (name: string, label: Parameters<typeof t>[0], value: string | null | undefined, type = 'text') => (
@@ -92,6 +95,8 @@ export default async function SettingsPage({ searchParams }: PageProps<'/manage/
           </button>
         </div>
       </form>
+
+      <SupportEditors t={t} contacts={contacts} articles={articles} />
 
       <DomainManager
         t={t}

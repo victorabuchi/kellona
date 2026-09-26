@@ -27,6 +27,9 @@ export const ORG_MODELS = [
   'PushSubscription',
   'BookingRelease',
   'SlotWatch',
+  'OrgContact',
+  'HelpArticle',
+  'FaultReport',
 ] as const;
 export type OrgModel = (typeof ORG_MODELS)[number];
 
@@ -68,6 +71,9 @@ export function orgScope(organizationId: string) {
     pushSubscriptions: model('PushSubscription', organizationId),
     releases: model('BookingRelease', organizationId),
     watches: model('SlotWatch', organizationId),
+    contacts: model('OrgContact', organizationId),
+    help: model('HelpArticle', organizationId),
+    reports: model('FaultReport', organizationId),
   };
 }
 

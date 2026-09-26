@@ -43,6 +43,9 @@ async function seedOrg(label: string): Promise<Seeded> {
   const domain = await s.domains.create({ host: `${label}-${tag}.scratch.test` });
   const release = await s.releases.create({ facilityId: facility.id, residentId: resident.id, startsAt: start.toISOString(), endsAt: start.toISOString() });
   const watch = await s.watches.create({ facilityId: facility.id, residentId: guest.id, startsAt: start.toISOString() });
+  const contact = await s.contacts.create({ title: `Contact ${label}`, phone: '+358000' });
+  const help = await s.help.create({ title: `Help ${label}`, body: 'Body' });
+  const report = await s.reports.create({ residentId: resident.id, facilityId: facility.id, message: `Broken ${label}` });
   return {
     orgId: org.id,
     ids: {
@@ -64,6 +67,9 @@ async function seedOrg(label: string): Promise<Seeded> {
       domains: domain.id,
       releases: release.id,
       watches: watch.id,
+      contacts: contact.id,
+      help: help.id,
+      reports: report.id,
     },
   };
 }

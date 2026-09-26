@@ -47,6 +47,11 @@ export default async function AccountPage() {
             {t('account.platform')}
           </a>
         )}
+        {viewer.kind === 'resident' && (
+          <Link className={styles.btnGhost} href="/book/help">
+            {t('nav.help')}
+          </Link>
+        )}
         <Link className={styles.btnGhost} href="/privacy">
           {t('common.privacy')}
         </Link>

@@ -1422,3 +1422,85 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Resident support pages */
+.emergency {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, #c2410c 40%, var(--border));
+  background: color-mix(in srgb, #c2410c 8%, var(--surface));
+  color: var(--text);
+  text-decoration: none;
+}
+
+.emergency strong {
+  color: #c2410c;
+}
+
+.faq {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.faqItem + .faqItem {
+  border-top: 1px solid var(--border);
+}
+
+.faqItem summary {
+  cursor: pointer;
+  padding: 16px 18px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.faqBody {
+  padding: 0 18px 18px;
+  color: var(--muted);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.contactCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.contactCard h2 {
+  margin: 8px 0 4px;
+  font-size: 18px;
+}
+
+.contactCard p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.contactHours {
+  margin-top: 6px !important;
+  font-weight: 600;
+  color: var(--text) !important;
+}
+
+.contactEmergency {
+  border-color: color-mix(in srgb, #c2410c 40%, var(--border));
+}
+
+.contactActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
