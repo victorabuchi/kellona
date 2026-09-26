@@ -9,3 +9,11 @@ export function orgBaseUrl(org: { slug: string; primaryHost: string | null }, cu
   const host = normalizeHost(org.primaryHost) ?? `${org.slug}.localhost`;
   return `http://${host}:${port}`;
 }
+
+// Kellona's own address (the platform dashboard), from any organization's address.
+export function platformBaseUrl(currentHost: string | null): string {
+  const config = hostConfigFromEnv();
+  if (config.production) return `https://${config.platformDomains[0]}`;
+  const port = /:(\d+)$/.exec(currentHost ?? '')?.[1] ?? '3000';
+  return `http://localhost:${port}`;
+}

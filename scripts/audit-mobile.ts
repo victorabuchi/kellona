@@ -52,6 +52,7 @@ const routes: Array<{ path: string; cookie: string | null; host?: string }> = [
   { path: `/book/f/${byKind('common_room').id}?error=weekly&skipped=2`, cookie: asResident },
   { path: '/book/parking', cookie: asResident },
   { path: '/account', cookie: asResident },
+  { path: '/manage/overview', cookie: admin },
   { path: '/manage', cookie: admin },
   { path: `/manage/b/${building.id}`, cookie: admin },
   { path: '/manage/residents?imported=1,2,3&errors=4%3A%20invalid%20email', cookie: admin },

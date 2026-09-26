@@ -13,5 +13,5 @@ export async function GET(request: Request) {
   const admin = await db.orm.public.PlatformAdmin.where({ email: row.email }).first();
   if (!admin) redirect('/?error=link');
   await createSession({ kind: 'admin', adminId: admin.id });
-  redirect('/manage');
+  redirect('/manage/overview');
 }

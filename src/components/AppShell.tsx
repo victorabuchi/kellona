@@ -11,6 +11,8 @@ import { stopActingAction } from '../lib/auth/acting-actions';
 import { signOutAction } from '../lib/auth/actions';
 import { DEFAULT_BRAND } from '../lib/brand/defaults';
 import { readTheme } from '../lib/theme';
+import { headers } from 'next/headers';
+import { platformBaseUrl } from '../lib/tenant/urls';
 
 const ICONS = {
   book: 'M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
@@ -22,9 +24,13 @@ const ICONS = {
   inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z',
   plus: 'M12 5v14M5 12h14',
   out: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z',
+  gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',
+  back: 'M19 12H5M12 19l-7-7 7-7',
 };
 type IconName = keyof typeof ICONS;
-type Item = { href: string; label: MessageKey; icon: IconName; group?: MessageKey };
+type Item = { href: string; label: MessageKey; icon: IconName; external?: boolean };
+type Nav = { sections: Item[][]; bottom: Item[] };
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   return (
@@ -34,31 +40,35 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   );
 }
 
-function itemsFor(viewer: Viewer, org: OrgContext | null): Item[] {
-  if (viewer.kind === 'resident') {
-    return [
-      { href: '/book', label: 'nav.book', icon: 'book' },
-      { href: '/account', label: 'nav.account', icon: 'user' },
-    ];
-  }
+// The sidebar changes with context, like a developer console: the platform
+// level lists organizations; inside an organization it lists that
+// organization's pages, with a way back to all organizations.
+function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Nav {
+  const account: Item = { href: '/account', label: 'nav.account', icon: 'user' };
+  if (viewer.kind === 'resident') return { sections: [[{ href: '/book', label: 'nav.book', icon: 'book' }]], bottom: [account] };
   if (!org) {
-    return [
-      { href: '/platform', label: 'nav.organizations', icon: 'grid' },
-      { href: '/platform/requests', label: 'nav.requests', icon: 'inbox' },
-      { href: '/account', label: 'nav.account', icon: 'user' },
-    ];
+    return {
+      sections: [
+        [
+          { href: '/platform', label: 'nav.organizations', icon: 'grid' },
+          { href: '/platform/requests', label: 'nav.requests', icon: 'inbox' },
+        ],
+      ],
+      bottom: [account],
+    };
   }
-  const items: Item[] = [
-    { href: '/manage', label: 'nav.buildings', icon: 'building', group: 'nav.manageGroup' },
-    { href: '/manage/residents', label: 'nav.residents', icon: 'people' },
+  const sections: Item[][] = [
+    [{ href: '/manage/overview', label: 'nav.overview', icon: 'home' }],
+    [
+      { href: '/manage', label: 'nav.buildings', icon: 'building' },
+      { href: '/manage/residents', label: 'nav.residents', icon: 'people' },
+    ],
   ];
-  if (viewer.kind === 'admin') {
-    items.push({ href: `/platform/o/${org.id}`, label: 'nav.brand', icon: 'palette' });
-    items.push({ href: '/platform', label: 'nav.allOrgs', icon: 'grid', group: 'nav.platformGroup' });
-  }
-  items.push({ href: '/account', label: 'nav.account', icon: 'user' });
-  return items;
+  if (viewer.kind === 'admin') sections.push([{ href: `/platform/o/${org.id}`, label: 'nav.settings', icon: 'gear' }]);
+  const bottom: Item[] = viewer.kind === 'admin' ? [{ href: `${platformUrl}/platform`, label: 'nav.back', icon: 'back', external: true }, account] : [account];
+  return { sections, bottom };
 }
+
 
 function initials(name: string): string {
   return name
@@ -76,8 +86,30 @@ const CHEVRONS = (
   </svg>
 );
 
+function SideItem({ item, active, t, className }: { item: Item; active: string; t: T; className: string }) {
+  const current = !item.external && (active === item.href || (item.href !== '/manage' && active.startsWith(`${item.href}/`)));
+  const body = (
+    <>
+      <Icon name={item.icon} />
+      <span className={styles.sideLabel}>{t(item.label)}</span>
+    </>
+  );
+  if (item.external) {
+    return (
+      <a href={item.href} className={className} title={t(item.label)}>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.href} className={className} aria-current={current ? 'page' : undefined} title={t(item.label)}>
+      {body}
+    </Link>
+  );
+}
+
 // Dashboard frame modeled on developer consoles: breadcrumb with an
-// organization switcher, sidebar on desktop, bottom tabs on phones.
+// organization switcher, an icon rail that opens on hover, bottom tabs on phones.
 export default async function AppShell({
   org,
   viewer,
@@ -93,17 +125,64 @@ export default async function AppShell({
   title: string;
   children: React.ReactNode;
 }) {
-  const items = itemsFor(viewer, org);
+  const platformUrl = platformBaseUrl((await headers()).get('host'));
+  const nav = navFor(viewer, org, platformUrl);
   const brand = org?.brand ?? DEFAULT_BRAND;
-  const mark = brand.appIconUrl ?? brand.faviconUrl ?? DEFAULT_BRAND.appIconUrl!;
+  const isAdmin = viewer.kind === 'admin';
+  // Inside an organization an admin still sees Kellona's mark, leading home.
+  const mark = isAdmin ? DEFAULT_BRAND.appIconUrl! : (brand.appIconUrl ?? brand.faviconUrl ?? DEFAULT_BRAND.appIconUrl!);
+  const home = isAdmin ? `${platformUrl}/platform` : (nav.sections[0]![0]!.href);
   const theme = await readTheme();
-  const orgs =
-    viewer.kind === 'admin'
-      ? await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all()
-      : [];
+  const orgs = isAdmin ? await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all() : [];
+  const tabs = [...nav.sections.flat(), ...nav.bottom.filter((i) => !i.external)].slice(0, 5);
 
   const role =
     viewer.kind === 'admin' ? t('account.role.admin') : viewer.kind === 'resident' ? t('account.role.resident') : viewer.role === 'manager' ? t('account.role.manager') : t('account.role.staff');
+
+  const switcher = (
+    <Dropdown
+      label={t('nav.switch')}
+      buttonClass={styles.crumb}
+      button={
+        <>
+          {org && (
+            <span className={styles.dot} style={{ background: brand.primaryColor }}>
+              {org.shortName.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <span className={styles.crumbText}>{org ? org.shortName : t('nav.organizations')}</span>
+          {org && <span className={styles.pill}>{org.isDemo ? t('platform.demo') : org.status}</span>}
+          {CHEVRONS}
+        </>
+      }
+    >
+      <div className={styles.popLabel}>{t('nav.switch')}</div>
+      <div className={styles.popScroll}>
+        {orgs.map((o) => (
+          <a key={o.id} href={`/platform/open/${o.id}`} className={styles.popItem} aria-current={o.id === org?.id}>
+            <span className={styles.dot} style={{ background: o.brand?.primaryColor ?? DEFAULT_BRAND.primaryColor }}>
+              {o.shortName.slice(0, 1).toUpperCase()}
+            </span>
+            {o.name}
+            {o.id === org?.id && (
+              <svg className={styles.check} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </a>
+        ))}
+      </div>
+      <div className={styles.popDivider} />
+      <a href={`${platformUrl}/platform`} className={styles.popItem}>
+        <Icon name="grid" size={16} />
+        {t('nav.allOrgs')}
+      </a>
+      <a href={`${platformUrl}/platform?new=1`} className={styles.popItem}>
+        <Icon name="plus" size={16} />
+        {t('nav.newOrg')}
+      </a>
+    </Dropdown>
+  );
 
   return (
     <div className={styles.shell}>
@@ -117,51 +196,25 @@ export default async function AppShell({
       )}
 
       <header className={styles.top}>
-        <Link href={items[0]!.href} className={styles.mark} aria-label={org?.name ?? 'Kellona'}>
+        <a href={home} className={styles.mark} aria-label={isAdmin ? 'Kellona' : (org?.name ?? 'Kellona')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={mark} alt="" />
-        </Link>
+        </a>
         <span className={styles.slash} aria-hidden="true">
           /
         </span>
-        {viewer.kind === 'admin' ? (
-          <Dropdown
-            label={t('nav.switch')}
-            buttonClass={styles.crumb}
-            button={
-              <>
-                <span className={styles.crumbText}>{org ? org.shortName : t('nav.organizations')}</span>
-                {org && <span className={styles.pill}>{org.isDemo ? t('platform.demo') : org.status}</span>}
-                {CHEVRONS}
-              </>
-            }
-          >
-            <div className={styles.popLabel}>{t('nav.switch')}</div>
-            <div className={styles.popScroll}>
-              {orgs.map((o) => (
-                <a key={o.id} href={`/platform/open/${o.id}`} className={styles.popItem} aria-current={o.id === org?.id}>
-                  <span className={styles.dot} style={{ background: o.brand?.primaryColor ?? DEFAULT_BRAND.primaryColor }}>
-                    {o.shortName.slice(0, 1).toUpperCase()}
-                  </span>
-                  {o.name}
-                  {o.id === org?.id && (
-                    <svg className={styles.check} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </a>
-              ))}
-            </div>
-            <div className={styles.popDivider} />
-            <Link href="/platform" className={styles.popItem}>
-              <Icon name="grid" size={16} />
-              {t('nav.allOrgs')}
-            </Link>
-            <Link href="/platform?new=1" className={styles.popItem}>
-              <Icon name="plus" size={16} />
-              {t('nav.newOrg')}
-            </Link>
-          </Dropdown>
+        {isAdmin && org && (
+          <>
+            <a href={`${platformUrl}/platform`} className={`${styles.crumb} ${styles.crumbRoot}`}>
+              <span className={styles.crumbText}>Kellona</span>
+            </a>
+            <span className={`${styles.slash} ${styles.crumbRoot}`} aria-hidden="true">
+              /
+            </span>
+          </>
+        )}
+        {isAdmin ? (
+          switcher
         ) : (
           <span className={styles.crumb}>
             <span className={styles.crumbText}>{org?.shortName ?? 'Kellona'}</span>
@@ -169,12 +222,7 @@ export default async function AppShell({
         )}
 
         <div className={styles.topRight}>
-          <Dropdown
-            label={t('nav.userMenu')}
-            align="right"
-            buttonClass={styles.avatar}
-            button={<span aria-hidden="true">{initials(viewer.name) || '?'}</span>}
-          >
+          <Dropdown label={t('nav.userMenu')} align="right" buttonClass={styles.avatar} button={<span aria-hidden="true">{initials(viewer.name) || '?'}</span>}>
             <div className={styles.popHead}>
               <strong>{viewer.name}</strong>
               <span>{viewer.email}</span>
@@ -184,6 +232,12 @@ export default async function AppShell({
             <div className={styles.popLabel}>{t('theme.label')}</div>
             <ThemeSwitcher initial={theme} labels={{ light: t('theme.light'), dark: t('theme.dark'), system: t('theme.system') }} />
             <div className={styles.popDivider} />
+            {isAdmin && org && (
+              <a href={`${platformUrl}/platform`} className={styles.popItem}>
+                <Icon name="back" size={16} />
+                {t('nav.back')}
+              </a>
+            )}
             <Link href="/account" className={styles.popItem}>
               <Icon name="user" size={16} />
               {t('nav.account')}
@@ -199,17 +253,22 @@ export default async function AppShell({
       </header>
 
       <div className={styles.body}>
-        <nav className={styles.side} aria-label={org?.shortName ?? 'Kellona'}>
-          {items.map((item) => (
-            <div key={item.href}>
-              {item.group && <div className={styles.sideGroup}>{t(item.group)}</div>}
-              <Link href={item.href} className={styles.sideLink} aria-current={active === item.href ? 'page' : undefined}>
-                <Icon name={item.icon} />
-                {t(item.label)}
-              </Link>
+        <div className={styles.rail}>
+          <nav className={styles.railInner} aria-label={org?.shortName ?? 'Kellona'}>
+            {nav.sections.map((section, i) => (
+              <div key={i} className={styles.railSection}>
+                {section.map((item) => (
+                  <SideItem key={item.href} item={item} active={active} t={t} className={styles.sideLink} />
+                ))}
+              </div>
+            ))}
+            <div className={`${styles.railSection} ${styles.railBottom}`}>
+              {nav.bottom.map((item) => (
+                <SideItem key={item.href} item={item} active={active} t={t} className={styles.sideLink} />
+              ))}
             </div>
-          ))}
-        </nav>
+          </nav>
+        </div>
         <main className={styles.main}>
           <h1 className={styles.title}>{title}</h1>
           {children}
@@ -217,11 +276,8 @@ export default async function AppShell({
       </div>
 
       <nav className={styles.tabs} aria-label={org?.shortName ?? 'Kellona'}>
-        {items.map((item) => (
-          <Link key={item.href} href={item.href} className={styles.tab} aria-current={active === item.href ? 'page' : undefined}>
-            <Icon name={item.icon} size={22} />
-            <span>{t(item.label)}</span>
-          </Link>
+        {tabs.map((item) => (
+          <SideItem key={item.href} item={item} active={active} t={t} className={styles.tab} />
         ))}
       </nav>
     </div>

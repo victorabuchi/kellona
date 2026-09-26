@@ -141,7 +141,7 @@ export async function consumeLinkAction(formData: FormData) {
   const staff = await scope.staff.q().where({ email: row.email }).first();
   if (!staff) back({ error: 'link' }, org);
   await createSession({ kind: 'staff', orgId: org.id, staffId: staff.id });
-  redirect('/manage');
+  redirect('/manage/overview');
 }
 
 export async function signOutAction() {

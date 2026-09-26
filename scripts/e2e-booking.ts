@@ -57,11 +57,11 @@ try {
   check('Open redirects to the organization address', open.status === 307 && handoffUrl.hostname === host, open.location);
   const handoff = await http('GET', host, handoffUrl.pathname + handoffUrl.search);
   const admin = handoff.cookie!;
-  check('handoff signs the admin in there and lands on /manage', handoff.status === 307 && handoff.location.endsWith('/manage') && Boolean(admin), `${handoff.status} ${handoff.location}`);
+  check('handoff signs the admin in there and lands on the overview', handoff.status === 307 && handoff.location.endsWith('/manage/overview') && Boolean(admin), `${handoff.status} ${handoff.location}`);
   const reuse = await http('GET', host, handoffUrl.pathname + handoffUrl.search);
   check('handoff token works once', reuse.location.includes('error=link'), reuse.location);
 
-  for (const path of ['/manage', `/manage/b/${bA.id}`, '/manage/residents', '/account', `/platform/o/${org.id}`]) {
+  for (const path of ['/manage/overview', '/manage', `/manage/b/${bA.id}`, '/manage/residents', '/account', `/platform/o/${org.id}`]) {
     const r = await http('GET', host, path, { cookie: admin });
     check(`staff page ${path} loads`, r.status === 200 && !r.body.includes('Application error'), String(r.status));
   }

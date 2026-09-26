@@ -83,7 +83,7 @@ try {
   // 1. Super-admin with password.
   if (adminEmail && adminPassword) {
     const res = await http('POST', 'demo-north.localhost', '/', { form: { [passwordAction!]: '', email: adminEmail, password: adminPassword } });
-    check('admin password sign-in lands on /manage', res.status === 303 && res.location.endsWith('/manage') && Boolean(res.cookie), `${res.status} ${res.location}`);
+    check('admin password sign-in lands on the organization overview', res.status === 303 && res.location.endsWith('/manage/overview') && Boolean(res.cookie), `${res.status} ${res.location}`);
     const account = await http('GET', 'demo-north.localhost', '/account', { cookie: res.cookie! });
     check('admin account page shows super-admin role', account.status === 200 && (account.body.includes('super-admin') || account.body.includes('pääkäyttäjä')));
     const platform = await http('GET', 'demo-north.localhost', '/platform', { cookie: res.cookie! });
