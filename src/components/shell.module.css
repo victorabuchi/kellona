@@ -62,6 +62,12 @@
   object-fit: contain;
 }
 
+.markInitial {
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+}
+
 .slash {
   color: var(--border);
   font-size: 20px;

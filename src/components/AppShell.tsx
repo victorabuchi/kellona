@@ -65,8 +65,8 @@ function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Na
     ],
   ];
   if (viewer.kind === 'admin') sections.push([{ href: `/platform/o/${org.id}`, label: 'nav.settings', icon: 'gear' }]);
-  const bottom: Item[] = viewer.kind === 'admin' ? [{ href: `${platformUrl}/platform`, label: 'nav.back', icon: 'back', external: true }, account] : [account];
-  return { sections, bottom };
+  void platformUrl;
+  return { sections, bottom: [account] };
 }
 
 
@@ -129,9 +129,10 @@ export default async function AppShell({
   const nav = navFor(viewer, org, platformUrl);
   const brand = org?.brand ?? DEFAULT_BRAND;
   const isAdmin = viewer.kind === 'admin';
-  // Inside an organization an admin still sees Kellona's mark, leading home.
-  const mark = isAdmin ? DEFAULT_BRAND.appIconUrl! : (brand.appIconUrl ?? brand.faviconUrl ?? DEFAULT_BRAND.appIconUrl!);
-  const home = isAdmin ? `${platformUrl}/platform` : (nav.sections[0]![0]!.href);
+  // Kellona's mark on the platform level; inside an organization the bar
+  // belongs to that organization and leads with its own logo.
+  const mark = org ? (brand.appIconUrl ?? brand.faviconUrl ?? brand.logoLightUrl) : DEFAULT_BRAND.appIconUrl!;
+  const home = nav.sections[0]![0]!.href;
   const theme = await readTheme();
   const orgs = isAdmin ? await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all() : [];
   const tabs = [...nav.sections.flat(), ...nav.bottom.filter((i) => !i.external)].slice(0, 5);
@@ -145,17 +146,17 @@ export default async function AppShell({
       buttonClass={styles.crumb}
       button={
         <>
-          {org && (
-            <span className={styles.dot} style={{ background: brand.primaryColor }}>
-              {org.shortName.slice(0, 1).toUpperCase()}
-            </span>
-          )}
           <span className={styles.crumbText}>{org ? org.shortName : t('nav.organizations')}</span>
           {org && <span className={styles.pill}>{org.isDemo ? t('platform.demo') : org.status}</span>}
           {CHEVRONS}
         </>
       }
     >
+      <a href={`${platformUrl}/platform`} className={styles.popItem}>
+        <Icon name="back" size={16} />
+        {t('nav.allOrgs')}
+      </a>
+      <div className={styles.popDivider} />
       <div className={styles.popLabel}>{t('nav.switch')}</div>
       <div className={styles.popScroll}>
         {orgs.map((o) => (
@@ -173,10 +174,6 @@ export default async function AppShell({
         ))}
       </div>
       <div className={styles.popDivider} />
-      <a href={`${platformUrl}/platform`} className={styles.popItem}>
-        <Icon name="grid" size={16} />
-        {t('nav.allOrgs')}
-      </a>
       <a href={`${platformUrl}/platform?new=1`} className={styles.popItem}>
         <Icon name="plus" size={16} />
         {t('nav.newOrg')}
@@ -196,23 +193,17 @@ export default async function AppShell({
       )}
 
       <header className={styles.top}>
-        <a href={home} className={styles.mark} aria-label={isAdmin ? 'Kellona' : (org?.name ?? 'Kellona')}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={mark} alt="" />
-        </a>
+        <Link href={home} className={styles.mark} aria-label={org?.name ?? 'Kellona'} style={org && !mark ? { background: brand.primaryColor } : undefined}>
+          {mark ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={mark} alt="" />
+          ) : (
+            <span className={styles.markInitial}>{org!.shortName.slice(0, 1).toUpperCase()}</span>
+          )}
+        </Link>
         <span className={styles.slash} aria-hidden="true">
           /
         </span>
-        {isAdmin && org && (
-          <>
-            <a href={`${platformUrl}/platform`} className={`${styles.crumb} ${styles.crumbRoot}`}>
-              <span className={styles.crumbText}>Kellona</span>
-            </a>
-            <span className={`${styles.slash} ${styles.crumbRoot}`} aria-hidden="true">
-              /
-            </span>
-          </>
-        )}
         {isAdmin ? (
           switcher
         ) : (
@@ -232,12 +223,6 @@ export default async function AppShell({
             <div className={styles.popLabel}>{t('theme.label')}</div>
             <ThemeSwitcher initial={theme} labels={{ light: t('theme.light'), dark: t('theme.dark'), system: t('theme.system') }} />
             <div className={styles.popDivider} />
-            {isAdmin && org && (
-              <a href={`${platformUrl}/platform`} className={styles.popItem}>
-                <Icon name="back" size={16} />
-                {t('nav.back')}
-              </a>
-            )}
             <Link href="/account" className={styles.popItem}>
               <Icon name="user" size={16} />
               {t('nav.account')}
