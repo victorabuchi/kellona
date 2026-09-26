@@ -15,7 +15,10 @@ export default async function PlatformPage({ searchParams }: PageProps<'/platfor
   const viewer = await requireAdmin();
   const org = await getCurrentOrg();
   const { t, locale } = await getT(org);
-  const orgs = await db.orm.public.Organization.orderBy((o) => o.name.asc()).all();
+  const [orgs, requests] = await Promise.all([
+    db.orm.public.Organization.orderBy((o) => o.name.asc()).all(),
+    db.orm.public.AccessRequest.orderBy((r) => r.createdAt.desc()).limit(50).all(),
+  ]);
 
   return (
     <Frame org={org} viewer={viewer} t={t} locale={locale} active="/platform" title={t('platform.title')}>
@@ -42,6 +45,29 @@ export default async function PlatformPage({ searchParams }: PageProps<'/platfor
           </li>
         ))}
       </ul>
+
+      <section className={styles.section}>
+        <h2 className={styles.h2}>{t('platform.requests')}</h2>
+        {requests.length === 0 ? (
+          <p className={styles.empty}>{t('platform.noRequests')}</p>
+        ) : (
+          <ul className={styles.list}>
+            {requests.map((r) => (
+              <li key={r.id} className={styles.row}>
+                <span className={styles.rowText}>
+                  <span className={styles.rowTitle}>{r.organizationName}</span>
+                  <span className={styles.muted}>
+                    {r.contactName} · <a href={`mailto:${r.email}`}>{r.email}</a>
+                    {r.phone ? ` · ${r.phone}` : ''}
+                    {r.residents ? ` · ${r.residents}` : ''} · {r.createdAt.slice(0, 10)}
+                  </span>
+                  {r.message && <span className={styles.muted}>{r.message}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <form action={createOrgAction} className={styles.card}>
         <h2 className={styles.h2}>{t('platform.create')}</h2>

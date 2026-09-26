@@ -278,3 +278,86 @@
   font-weight: 600;
   font-size: 14px;
 }
+
+.logoTitle {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.switchBox {
+  width: 100%;
+  max-width: 420px;
+  margin-top: -8px;
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 14px;
+  text-align: center;
+}
+
+.switchBox a {
+  font-weight: 700;
+}
+
+.passwordWrap {
+  position: relative;
+}
+
+.passwordWrap .input {
+  padding-right: 48px;
+}
+
+.eye {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.fieldTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.honey {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkList a {
+  word-break: break-all;
+}
