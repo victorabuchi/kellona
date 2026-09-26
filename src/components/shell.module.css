@@ -269,6 +269,18 @@
   font-weight: 800;
 }
 
+.dotLogo {
+  background: #fff;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.dotLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .danger {
   color: var(--danger);
 }

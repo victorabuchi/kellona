@@ -205,9 +205,16 @@ export default async function AppShell({
       <div className={styles.popScroll}>
         {orgs.map((o) => (
           <a key={o.id} href={`/platform/open/${o.id}`} className={styles.popItem} aria-current={o.id === org?.id}>
-            <span className={styles.dot} style={{ background: o.brand?.primaryColor ?? DEFAULT_BRAND.primaryColor }}>
-              {o.shortName.slice(0, 1).toUpperCase()}
-            </span>
+            {o.brand?.appIconUrl || o.brand?.faviconUrl ? (
+              <span className={`${styles.dot} ${styles.dotLogo}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={(o.brand.appIconUrl ?? o.brand.faviconUrl)!} alt="" />
+              </span>
+            ) : (
+              <span className={styles.dot} style={{ background: o.brand?.primaryColor ?? DEFAULT_BRAND.primaryColor }}>
+                {o.shortName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
             {o.name}
             {o.id === org?.id && (
               <svg className={styles.check} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
