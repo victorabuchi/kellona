@@ -190,6 +190,8 @@ model AuthIdentity {
   residentId     Uuid?
   staff          Staff?            @relation(fields: [staffId], references: [id], onDelete: Cascade)
   staffId        Uuid?
+  // scrypt hash, only for provider 'password'.
+  secretHash     String?
   createdAt      TimestamptzString @default(now())
   lastUsedAt     TimestamptzString?
 
@@ -325,4 +327,31 @@ model PushSubscription {
 
   @@index([residentId])
   @@map("push_subscription")
+}
+
+// Platform level, not organization owned: Kellona's own super-admins.
+model PlatformAdmin {
+  id           Uuid               @id @default(uuid())
+  email        String             @unique
+  name         String
+  passwordHash String?
+  createdAt    TimestamptzString  @default(now())
+  lastSignInAt TimestamptzString?
+
+  @@map("platform_admin")
+}
+
+// One-time sign-in link. organizationId is null for platform admins, which is
+// why this table is not in orgScope. Only a hash of the token is stored.
+model LoginToken {
+  id             Uuid               @id @default(uuid())
+  tokenHash      String             @unique
+  email          String
+  organizationId Uuid?
+  expiresAt      TimestamptzString
+  usedAt         TimestamptzString?
+  createdAt      TimestamptzString  @default(now())
+
+  @@index([email])
+  @@map("login_token")
 }

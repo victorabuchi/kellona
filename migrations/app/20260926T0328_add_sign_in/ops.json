@@ -1,0 +1,245 @@
+[
+  {
+    "id": "table.login_token",
+    "label": "Create table \"login_token\"",
+    "summary": "Creates table \"login_token\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "login_token"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"login_token\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"login_token\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"login_token\"",
+        "sql": "CREATE TABLE \"public\".\"login_token\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"organizationId\" uuid,\n  \"tokenHash\" text NOT NULL,\n  \"usedAt\" timestamptz,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"login_token\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"login_token\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.platform_admin",
+    "label": "Create table \"platform_admin\"",
+    "summary": "Creates table \"platform_admin\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "platform_admin"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"platform_admin\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"platform_admin\"",
+        "sql": "CREATE TABLE \"public\".\"platform_admin\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"lastSignInAt\" timestamptz,\n  \"name\" text NOT NULL,\n  \"passwordHash\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"platform_admin\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.auth_identity.secretHash",
+    "label": "Add column \"secretHash\" to \"auth_identity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "secretHash",
+        "table": "auth_identity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"secretHash\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "auth_identity",
+          "secretHash"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"secretHash\"",
+        "sql": "ALTER TABLE \"public\".\"auth_identity\" ADD COLUMN \"secretHash\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"secretHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "auth_identity",
+          "secretHash"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.login_token.login_token_tokenHash_key",
+    "label": "Add unique constraint on \"login_token\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "login_token_tokenHash_key",
+        "table": "login_token"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"login_token_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "login_token_tokenHash_key",
+          "public",
+          "\"public\".\"login_token\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"login_token_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"login_token\" ADD CONSTRAINT \"login_token_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"login_token_tokenHash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "login_token_tokenHash_key",
+          "public",
+          "\"public\".\"login_token\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.platform_admin.platform_admin_email_key",
+    "label": "Add unique constraint on \"platform_admin\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "platform_admin_email_key",
+        "table": "platform_admin"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"platform_admin_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_email_key",
+          "public",
+          "\"public\".\"platform_admin\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"platform_admin_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"platform_admin\" ADD CONSTRAINT \"platform_admin_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"platform_admin_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_email_key",
+          "public",
+          "\"public\".\"platform_admin\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.login_token.login_token_email_idx_46df9cad",
+    "label": "Create index \"login_token_email_idx_46df9cad\" on \"login_token\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "login_token_email_idx_46df9cad",
+        "table": "login_token"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"login_token_email_idx_46df9cad\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"login_token_email_idx_46df9cad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"login_token_email_idx_46df9cad\"",
+        "sql": "CREATE INDEX \"login_token_email_idx_46df9cad\" ON \"public\".\"login_token\" (\"email\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"login_token_email_idx_46df9cad\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"login_token_email_idx_46df9cad\""
+        ]
+      }
+    ]
+  }
+]
