@@ -581,3 +581,72 @@
     transform: scale(0.97);
   }
 }
+
+.danger {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+
+.dangerIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--danger);
+  color: #fff;
+}
+
+.dangerText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  justify-items: start;
+}
+
+.dangerText p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dangerText .dangerNote {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.dangerForm {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.dangerForm label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dangerForm input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.btnDangerSolid:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

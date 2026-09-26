@@ -86,6 +86,7 @@ try {
     check('admin password sign-in lands on the organization overview', res.status === 303 && res.location.endsWith('/manage/overview') && Boolean(res.cookie), `${res.status} ${res.location}`);
     const account = await http('GET', 'demo-north.localhost', '/account', { cookie: res.cookie! });
     check('admin account page shows super-admin role', account.status === 200 && (account.body.includes('super-admin') || account.body.includes('pääkäyttäjä')));
+    check('the only super-admin cannot delete the account', (account.body.includes('only super-admin') || account.body.includes('ainoa pääkäyttäjä')) && !account.body.includes('name="confirm"'));
     const platform = await http('GET', 'demo-north.localhost', '/platform', { cookie: res.cookie! });
     check('organization list opened on an organization address moves to Kellona', platform.status === 307 && platform.location.startsWith('/platform/home'), `${platform.status} ${platform.location}`);
     const elsewhere = await http('GET', 'demo-lakeside.localhost', '/account', { cookie: res.cookie! });
@@ -160,6 +161,16 @@ try {
   const signOut = acct.body.includes('Kirjaudu ulos') ? actionIn(acct.body, 'Kirjaudu ulos') : actionIn(acct.body, 'Sign out');
   const out = await http('POST', scratchHost, '/account', { cookie: used.cookie ?? '', form: { [signOut!]: '' } });
   check('sign out clears the session cookie', out.status === 303 && out.location.endsWith('/'));
+
+  // Deleting your own account: the typed email must match, then the resident is gone.
+  const own = await http('GET', scratchHost, '/account', { cookie: signedIn.cookie ?? '' });
+  const del = actionIn(own.body, 'name="confirm"');
+  const wrongConfirm = await http('POST', scratchHost, '/account', { cookie: signedIn.cookie ?? '', form: { [del]: '', confirm: 'someone@else.test' } });
+  check('delete account needs the right email', wrongConfirm.location.includes('error=confirm') && Boolean(await s.residents.q().where({ email: residentEmail }).first()), wrongConfirm.location);
+  const deleted = await http('POST', scratchHost, '/account', { cookie: signedIn.cookie ?? '', form: { [del]: '', confirm: residentEmail.toUpperCase() } });
+  check('delete account removes the resident and signs out', deleted.status === 303 && deleted.location.endsWith('/') && !(await s.residents.q().where({ email: residentEmail }).first()), deleted.location);
+  const after = await http('GET', scratchHost, '/account', { cookie: signedIn.cookie ?? '' });
+  check('the old session no longer works', after.status === 307, String(after.status));
 } finally {
   await db.orm.public.Organization.where({ id: org.id }).delete();
   for (const email of [residentEmail, linkEmail]) {
