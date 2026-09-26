@@ -20,6 +20,10 @@
       "model": "BookingParticipant",
       "namespace": "public"
     },
+    "booking_release": {
+      "model": "BookingRelease",
+      "namespace": "public"
+    },
     "building": {
       "model": "Building",
       "namespace": "public"
@@ -66,6 +70,10 @@
     },
     "resident": {
       "model": "Resident",
+      "namespace": "public"
+    },
+    "slot_watch": {
+      "model": "SlotWatch",
       "namespace": "public"
     },
     "staff": {
@@ -352,6 +360,13 @@
           },
           "Booking": {
             "fields": {
+              "checkInReminderSentAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "checkedInAt": {
                 "nullable": true,
                 "type": {
@@ -497,6 +512,9 @@
             },
             "storage": {
               "fields": {
+                "checkInReminderSentAt": {
+                  "column": "checkInReminderSentAt"
+                },
                 "checkedInAt": {
                   "column": "checkedInAt"
                 },
@@ -653,6 +671,136 @@
               },
               "namespaceId": "public",
               "table": "booking_participant"
+            }
+          },
+          "BookingRelease": {
+            "fields": {
+              "endsAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "facilityId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "releasedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "residentId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "startsAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "facility": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "facilityId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Facility",
+                  "namespace": "public"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              },
+              "resident": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "residentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Resident",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "endsAt": {
+                  "column": "endsAt"
+                },
+                "facilityId": {
+                  "column": "facilityId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "releasedAt": {
+                  "column": "releasedAt"
+                },
+                "residentId": {
+                  "column": "residentId"
+                },
+                "startsAt": {
+                  "column": "startsAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "booking_release"
             }
           },
           "Building": {
@@ -937,6 +1085,20 @@
                   "kind": "scalar"
                 }
               },
+              "checkInGraceMinutes": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "checkInOpensMinutes": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "closeHour": {
                 "nullable": false,
                 "type": {
@@ -1099,6 +1261,36 @@
                   "model": "ParkingClaim",
                   "namespace": "public"
                 }
+              },
+              "releases": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "facilityId"
+                  ]
+                },
+                "to": {
+                  "model": "BookingRelease",
+                  "namespace": "public"
+                }
+              },
+              "watches": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "facilityId"
+                  ]
+                },
+                "to": {
+                  "model": "SlotWatch",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -1114,6 +1306,12 @@
                 },
                 "capacity": {
                   "column": "capacity"
+                },
+                "checkInGraceMinutes": {
+                  "column": "checkInGraceMinutes"
+                },
+                "checkInOpensMinutes": {
+                  "column": "checkInOpensMinutes"
                 },
                 "closeHour": {
                   "column": "closeHour"
@@ -1838,6 +2036,21 @@
                   "namespace": "public"
                 }
               },
+              "releases": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "BookingRelease",
+                  "namespace": "public"
+                }
+              },
               "residents": {
                 "cardinality": "1:N",
                 "on": {
@@ -1925,6 +2138,21 @@
                 },
                 "to": {
                   "model": "Unit",
+                  "namespace": "public"
+                }
+              },
+              "watches": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "SlotWatch",
                   "namespace": "public"
                 }
               }
@@ -2444,6 +2672,21 @@
                   "namespace": "public"
                 }
               },
+              "releases": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "residentId"
+                  ]
+                },
+                "to": {
+                  "model": "BookingRelease",
+                  "namespace": "public"
+                }
+              },
               "unit": {
                 "cardinality": "N:1",
                 "nullable": true,
@@ -2457,6 +2700,21 @@
                 },
                 "to": {
                   "model": "Unit",
+                  "namespace": "public"
+                }
+              },
+              "watches": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "residentId"
+                  ]
+                },
+                "to": {
+                  "model": "SlotWatch",
                   "namespace": "public"
                 }
               }
@@ -2493,6 +2751,126 @@
               },
               "namespaceId": "public",
               "table": "resident"
+            }
+          },
+          "SlotWatch": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "facilityId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "residentId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "startsAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "facility": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "facilityId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Facility",
+                  "namespace": "public"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              },
+              "resident": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "residentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Resident",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "facilityId": {
+                  "column": "facilityId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "residentId": {
+                  "column": "residentId"
+                },
+                "startsAt": {
+                  "column": "startsAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "slot_watch"
             }
           },
           "Staff": {
@@ -3181,6 +3559,11 @@
             },
             "booking": {
               "columns": {
+                "checkInReminderSentAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "checkedInAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
@@ -3477,6 +3860,143 @@
                 }
               ]
             },
+            "booking_release": {
+              "columns": {
+                "endsAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "facilityId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "releasedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "residentId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "startsAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "booking_release"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "facilityId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "booking_release"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "facility"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "residentId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "booking_release"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "resident"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "facilityId"
+                  ],
+                  "name": "booking_release_facilityId_idx_3710d8c1",
+                  "prefix": "booking_release_facilityId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "booking_release_organizationId_idx_2e17ef41",
+                  "prefix": "booking_release_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "startsAt"
+                  ],
+                  "name": "booking_release_organizationId_startsAt_idx_4d98ff60",
+                  "prefix": "booking_release_organizationId_startsAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "residentId"
+                  ],
+                  "name": "booking_release_residentId_idx_9d41a33b",
+                  "prefix": "booking_release_residentId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "building": {
               "columns": {
                 "address": {
@@ -3688,6 +4208,24 @@
                   "default": {
                     "kind": "literal",
                     "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "checkInGraceMinutes": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 15
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "checkInOpensMinutes": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
                   },
                   "nativeType": "int4",
                   "nullable": false
@@ -4722,6 +5260,137 @@
                 }
               ]
             },
+            "slot_watch": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "facilityId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "residentId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "startsAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "slot_watch"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "facilityId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "slot_watch"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "facility"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "residentId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "slot_watch"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "resident"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "facilityId"
+                  ],
+                  "name": "slot_watch_facilityId_idx_3710d8c1",
+                  "prefix": "slot_watch_facilityId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "slot_watch_organizationId_idx_2e17ef41",
+                  "prefix": "slot_watch_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "residentId"
+                  ],
+                  "name": "slot_watch_residentId_idx_9d41a33b",
+                  "prefix": "slot_watch_residentId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "facilityId",
+                    "startsAt",
+                    "residentId"
+                  ]
+                }
+              ]
+            },
             "staff": {
               "columns": {
                 "createdAt": {
@@ -5125,10 +5794,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "efd4acb77501028d39044f6763e951b790ed45b8e2b07d7ca78bed56c6a861b8"
+    "storageHash": "52b0977688c1600170a6f3d2fd2280972b65f70be6bae4d2f2264167dcf415ee"
   },
   "execution": {
-    "executionHash": "026946f9b336ed4bcd08c288c42dfb94fd1704326630d0a9b549488a74944001",
+    "executionHash": "81a3f88611daff473a7132a7a1b366754bcaca18627cf13fc46c84d46acbd0ff",
     "mutations": {
       "defaults": [
         {
@@ -5173,6 +5842,17 @@
             "column": "id",
             "namespace": "public",
             "table": "booking_participant"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "booking_release"
           }
         },
         {
@@ -5305,6 +5985,17 @@
             "column": "id",
             "namespace": "public",
             "table": "resident"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "slot_watch"
           }
         },
         {

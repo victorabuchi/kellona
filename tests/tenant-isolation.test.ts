@@ -41,6 +41,8 @@ async function seedOrg(label: string): Promise<Seeded> {
   const text = await s.texts.create({ locale: 'en', key: 'signin.title', value: `Hello ${label}` });
   const brand = await s.brand.create({ primaryColor: '#123456' });
   const domain = await s.domains.create({ host: `${label}-${tag}.scratch.test` });
+  const release = await s.releases.create({ facilityId: facility.id, residentId: resident.id, startsAt: start.toISOString(), endsAt: start.toISOString() });
+  const watch = await s.watches.create({ facilityId: facility.id, residentId: guest.id, startsAt: start.toISOString() });
   return {
     orgId: org.id,
     ids: {
@@ -60,6 +62,8 @@ async function seedOrg(label: string): Promise<Seeded> {
       texts: text.id,
       brand: brand.id,
       domains: domain.id,
+      releases: release.id,
+      watches: watch.id,
     },
   };
 }

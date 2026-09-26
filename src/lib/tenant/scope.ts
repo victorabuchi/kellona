@@ -25,6 +25,8 @@ export const ORG_MODELS = [
   'BookingParticipant',
   'ParkingClaim',
   'PushSubscription',
+  'BookingRelease',
+  'SlotWatch',
 ] as const;
 export type OrgModel = (typeof ORG_MODELS)[number];
 
@@ -64,6 +66,8 @@ export function orgScope(organizationId: string) {
     participants: model('BookingParticipant', organizationId),
     parkingClaims: model('ParkingClaim', organizationId),
     pushSubscriptions: model('PushSubscription', organizationId),
+    releases: model('BookingRelease', organizationId),
+    watches: model('SlotWatch', organizationId),
   };
 }
 

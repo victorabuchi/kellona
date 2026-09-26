@@ -84,7 +84,7 @@ export default async function OverviewPage() {
   const today = dayStart(new Date(now));
   const windowStart = addDays(today, -7);
   const days = Array.from({ length: 14 }, (_, i) => addDays(windowStart, i));
-  const [windowBookings, claims, buildingStates] = await Promise.all([
+  const [windowBookings, claims, buildingStates, releases] = await Promise.all([
     facilityIds.length
       ? scope.bookings
           .q()
@@ -95,6 +95,7 @@ export default async function OverviewPage() {
       : Promise.resolve([]),
     scope.parkingClaims.q().all(),
     scope.buildingAmenities.q().where({ enabled: false }).all(),
+    scope.releases.q().where((r) => r.releasedAt.gte(new Date(now - 30 * 86_400_000).toISOString())).all(),
   ]);
   const withGuests = windowBookings.length
     ? new Set((await scope.participants.q().where((p) => p.bookingId.in(windowBookings.map((b) => b.id))).all()).map((p) => p.bookingId))
@@ -112,6 +113,7 @@ export default async function OverviewPage() {
       max: Math.max(1, ...perDay),
       groups: rows.filter((b) => withGuests.has(b.id)).length,
       weekly: rows.filter((b) => b.seriesId).length,
+      noShows: releases.filter((r) => kindOf.get(r.facilityId) === kind).length,
       present: facilities.some((f) => (kind === 'spaces' ? isSpaceKind(f.kind) : f.kind === kind)),
     };
   });
@@ -282,6 +284,13 @@ export default async function OverviewPage() {
                         {t('overview.weekly')}
                       </span>
                       <strong>{g.weekly}</strong>
+                    </div>
+                    <div title={t('checkin.noShows')}>
+                      <span>
+                        <i className={shell.legendDot} style={{ background: '#c2410c' }} />
+                        {t('overview.noShows')}
+                      </span>
+                      <strong>{g.noShows}</strong>
                     </div>
                   </div>
                 </div>

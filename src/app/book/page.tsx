@@ -10,7 +10,9 @@ import { loadAmenities, residentContext } from '../../lib/booking/engine';
 import { isSpaceKind, type AmenityKind } from '../../lib/booking/kinds';
 import { fmtWhen } from '../../lib/booking/format';
 import { nowMs } from '../../lib/booking/time';
-import { cancelBookingAction, cancelSeriesAction, respondInviteAction } from '../../lib/booking/actions';
+import { cancelBookingAction, cancelSeriesAction, checkInAction, respondInviteAction } from '../../lib/booking/actions';
+import { releaseMissed } from '../../lib/booking/release';
+import { checkInPhase } from '../../lib/booking/checkin';
 
 export const metadata: Metadata = { title: 'Booking' };
 
@@ -30,6 +32,10 @@ export default async function BookHubPage() {
   const now = nowMs();
   const nowIso = new Date(now).toISOString();
   const when = (iso: string) => fmtWhen(iso, locale, org.timezone);
+
+  // Free up bookings nobody checked in to in this building.
+  const checkInFacilities = await scope.facilities.q().where({ buildingId: ctx.buildingId }).where((f) => f.checkInOpensMinutes.gt(0)).all();
+  if (checkInFacilities.length) await releaseMissed(org, scope, checkInFacilities, now);
 
   const [amenities, facilities, mine, participations, claim] = await Promise.all([
     loadAmenities(scope, ctx.buildingId, ctx.unitId),
@@ -144,9 +150,16 @@ export default async function BookHubPage() {
                     <span className={styles.muted}>
                       {when(b.startsAt)} · {n ? t('book.withCount', { n }) : t('book.you')}
                       {b.seriesId ? ` · ${t('book.weekly')}` : ''}
+                    {checkInPhase(b, b.facility!, now) === 'checkedIn' ? ` · ${t('checkin.checkedIn')}` : ''}
                     </span>
                   </span>
                   <span className={styles.actions}>
+                    {checkInPhase(b, b.facility!, now) === 'open' && (
+                      <form action={checkInAction}>
+                        <input type="hidden" name="bookingId" value={b.id} />
+                        <button className={styles.btn}>{t('checkin.button')}</button>
+                      </form>
+                    )}
                     <a className={styles.btnGhost} href={`/book/ics/${b.id}`}>
                       {t('book.calendar')}
                     </a>

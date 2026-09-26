@@ -1,0 +1,773 @@
+[
+  {
+    "id": "table.booking_release",
+    "label": "Create table \"booking_release\"",
+    "summary": "Creates table \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"booking_release\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"booking_release\"",
+        "sql": "CREATE TABLE \"public\".\"booking_release\" (\n  \"endsAt\" timestamptz NOT NULL,\n  \"facilityId\" uuid NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"releasedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"residentId\" uuid NOT NULL,\n  \"startsAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"booking_release\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.slot_watch",
+    "label": "Create table \"slot_watch\"",
+    "summary": "Creates table \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"slot_watch\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"slot_watch\"",
+        "sql": "CREATE TABLE \"public\".\"slot_watch\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"facilityId\" uuid NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"residentId\" uuid NOT NULL,\n  \"startsAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"slot_watch\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.booking.checkInReminderSentAt",
+    "label": "Add column \"checkInReminderSentAt\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "checkInReminderSentAt",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"checkInReminderSentAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "booking",
+          "checkInReminderSentAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"checkInReminderSentAt\"",
+        "sql": "ALTER TABLE \"public\".\"booking\" ADD COLUMN \"checkInReminderSentAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"checkInReminderSentAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "booking",
+          "checkInReminderSentAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.facility.checkInGraceMinutes",
+    "label": "Add column \"checkInGraceMinutes\" to \"facility\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "checkInGraceMinutes",
+        "table": "facility"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"checkInGraceMinutes\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "checkInGraceMinutes"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"checkInGraceMinutes\"",
+        "sql": "ALTER TABLE \"public\".\"facility\" ADD COLUMN \"checkInGraceMinutes\" int4 DEFAULT 15 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"checkInGraceMinutes\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "checkInGraceMinutes"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.facility.checkInOpensMinutes",
+    "label": "Add column \"checkInOpensMinutes\" to \"facility\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "checkInOpensMinutes",
+        "table": "facility"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"checkInOpensMinutes\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "checkInOpensMinutes"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"checkInOpensMinutes\"",
+        "sql": "ALTER TABLE \"public\".\"facility\" ADD COLUMN \"checkInOpensMinutes\" int4 DEFAULT 0 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"checkInOpensMinutes\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "facility",
+          "checkInOpensMinutes"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.slot_watch.slot_watch_facilityId_startsAt_residentId_key",
+    "label": "Add unique constraint on \"slot_watch\" (facilityId, startsAt, residentId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "slot_watch_facilityId_startsAt_residentId_key",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"slot_watch_facilityId_startsAt_residentId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_facilityId_startsAt_residentId_key",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"slot_watch_facilityId_startsAt_residentId_key\"",
+        "sql": "ALTER TABLE \"public\".\"slot_watch\" ADD CONSTRAINT \"slot_watch_facilityId_startsAt_residentId_key\" UNIQUE (\"facilityId\", \"startsAt\", \"residentId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"slot_watch_facilityId_startsAt_residentId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_facilityId_startsAt_residentId_key",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking_release.booking_release_facilityId_idx_3710d8c1",
+    "label": "Create index \"booking_release_facilityId_idx_3710d8c1\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "booking_release_facilityId_idx_3710d8c1",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_release_facilityId_idx_3710d8c1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_facilityId_idx_3710d8c1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_release_facilityId_idx_3710d8c1\"",
+        "sql": "CREATE INDEX \"booking_release_facilityId_idx_3710d8c1\" ON \"public\".\"booking_release\" (\"facilityId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_release_facilityId_idx_3710d8c1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_facilityId_idx_3710d8c1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking_release.booking_release_organizationId_idx_2e17ef41",
+    "label": "Create index \"booking_release_organizationId_idx_2e17ef41\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "booking_release_organizationId_idx_2e17ef41",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_release_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_release_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"booking_release_organizationId_idx_2e17ef41\" ON \"public\".\"booking_release\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_release_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking_release.booking_release_organizationId_startsAt_idx_4d98ff60",
+    "label": "Create index \"booking_release_organizationId_startsAt_idx_4d98ff60\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "booking_release_organizationId_startsAt_idx_4d98ff60",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_release_organizationId_startsAt_idx_4d98ff60\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_organizationId_startsAt_idx_4d98ff60\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_release_organizationId_startsAt_idx_4d98ff60\"",
+        "sql": "CREATE INDEX \"booking_release_organizationId_startsAt_idx_4d98ff60\" ON \"public\".\"booking_release\" (\"organizationId\", \"startsAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_release_organizationId_startsAt_idx_4d98ff60\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_organizationId_startsAt_idx_4d98ff60\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking_release.booking_release_residentId_idx_9d41a33b",
+    "label": "Create index \"booking_release_residentId_idx_9d41a33b\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "booking_release_residentId_idx_9d41a33b",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_release_residentId_idx_9d41a33b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_residentId_idx_9d41a33b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_release_residentId_idx_9d41a33b\"",
+        "sql": "CREATE INDEX \"booking_release_residentId_idx_9d41a33b\" ON \"public\".\"booking_release\" (\"residentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_release_residentId_idx_9d41a33b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"booking_release_residentId_idx_9d41a33b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.slot_watch.slot_watch_facilityId_idx_3710d8c1",
+    "label": "Create index \"slot_watch_facilityId_idx_3710d8c1\" on \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "slot_watch_facilityId_idx_3710d8c1",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"slot_watch_facilityId_idx_3710d8c1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch_facilityId_idx_3710d8c1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"slot_watch_facilityId_idx_3710d8c1\"",
+        "sql": "CREATE INDEX \"slot_watch_facilityId_idx_3710d8c1\" ON \"public\".\"slot_watch\" (\"facilityId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"slot_watch_facilityId_idx_3710d8c1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch_facilityId_idx_3710d8c1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.slot_watch.slot_watch_organizationId_idx_2e17ef41",
+    "label": "Create index \"slot_watch_organizationId_idx_2e17ef41\" on \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "slot_watch_organizationId_idx_2e17ef41",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"slot_watch_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"slot_watch_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"slot_watch_organizationId_idx_2e17ef41\" ON \"public\".\"slot_watch\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"slot_watch_organizationId_idx_2e17ef41\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch_organizationId_idx_2e17ef41\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.slot_watch.slot_watch_residentId_idx_9d41a33b",
+    "label": "Create index \"slot_watch_residentId_idx_9d41a33b\" on \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "slot_watch_residentId_idx_9d41a33b",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"slot_watch_residentId_idx_9d41a33b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch_residentId_idx_9d41a33b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"slot_watch_residentId_idx_9d41a33b\"",
+        "sql": "CREATE INDEX \"slot_watch_residentId_idx_9d41a33b\" ON \"public\".\"slot_watch\" (\"residentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"slot_watch_residentId_idx_9d41a33b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"slot_watch_residentId_idx_9d41a33b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.booking_release.booking_release_organizationId_fkey",
+    "label": "Add foreign key \"booking_release_organizationId_fkey\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "booking_release_organizationId_fkey",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"booking_release_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_release_organizationId_fkey",
+          "public",
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"booking_release_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"booking_release\"\nADD CONSTRAINT \"booking_release_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"booking_release_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_release_organizationId_fkey",
+          "public",
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.booking_release.booking_release_facilityId_fkey",
+    "label": "Add foreign key \"booking_release_facilityId_fkey\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "booking_release_facilityId_fkey",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"booking_release_facilityId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_release_facilityId_fkey",
+          "public",
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"booking_release_facilityId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"booking_release\"\nADD CONSTRAINT \"booking_release_facilityId_fkey\"\nFOREIGN KEY (\"facilityId\")\nREFERENCES \"public\".\"facility\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"booking_release_facilityId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_release_facilityId_fkey",
+          "public",
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.booking_release.booking_release_residentId_fkey",
+    "label": "Add foreign key \"booking_release_residentId_fkey\" on \"booking_release\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "booking_release_residentId_fkey",
+        "table": "booking_release"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"booking_release_residentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_release_residentId_fkey",
+          "public",
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"booking_release_residentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"booking_release\"\nADD CONSTRAINT \"booking_release_residentId_fkey\"\nFOREIGN KEY (\"residentId\")\nREFERENCES \"public\".\"resident\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"booking_release_residentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_release_residentId_fkey",
+          "public",
+          "\"public\".\"booking_release\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.slot_watch.slot_watch_organizationId_fkey",
+    "label": "Add foreign key \"slot_watch_organizationId_fkey\" on \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "slot_watch_organizationId_fkey",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"slot_watch_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_organizationId_fkey",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"slot_watch_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"slot_watch\"\nADD CONSTRAINT \"slot_watch_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"slot_watch_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_organizationId_fkey",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.slot_watch.slot_watch_facilityId_fkey",
+    "label": "Add foreign key \"slot_watch_facilityId_fkey\" on \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "slot_watch_facilityId_fkey",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"slot_watch_facilityId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_facilityId_fkey",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"slot_watch_facilityId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"slot_watch\"\nADD CONSTRAINT \"slot_watch_facilityId_fkey\"\nFOREIGN KEY (\"facilityId\")\nREFERENCES \"public\".\"facility\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"slot_watch_facilityId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_facilityId_fkey",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.slot_watch.slot_watch_residentId_fkey",
+    "label": "Add foreign key \"slot_watch_residentId_fkey\" on \"slot_watch\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "slot_watch_residentId_fkey",
+        "table": "slot_watch"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"slot_watch_residentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_residentId_fkey",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"slot_watch_residentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"slot_watch\"\nADD CONSTRAINT \"slot_watch_residentId_fkey\"\nFOREIGN KEY (\"residentId\")\nREFERENCES \"public\".\"resident\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"slot_watch_residentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "slot_watch_residentId_fkey",
+          "public",
+          "\"public\".\"slot_watch\""
+        ]
+      }
+    ]
+  }
+]

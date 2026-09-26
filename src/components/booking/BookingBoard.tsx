@@ -12,6 +12,12 @@ export type BoardSlot = {
   cancellable?: boolean;
   deadlineLabel?: string;
   lengths: number[];
+  // Someone checked in and the time is running now.
+  inUse?: boolean;
+  // Own bookings at facilities that use check-in.
+  checkIn?: { phase: 'off' | 'notYet' | 'open' | 'checkedIn' | 'missed' | 'over'; opensLabel: string; untilLabel: string };
+  // Set when the viewer asked to be told if this booked time frees up.
+  watchId?: string | null;
 };
 
 export type BoardDay = { key: string; weekday: string; date: string; longLabel: string; isToday: boolean; slots: BoardSlot[] };
@@ -52,7 +58,15 @@ export type BoardLabels = Record<
   | 'cancelClosed'
   | 'repeatWeekly'
   | 'repeatFor'
-  | 'repeatNote',
+  | 'repeatNote'
+  | 'inUse'
+  | 'checkIn'
+  | 'checkedIn'
+  | 'notify'
+  | 'watching'
+  | 'unwatch'
+  | 'opensAt'
+  | 'openUntil',
   string
 >;
 
@@ -74,6 +88,9 @@ type Props = {
   labels: BoardLabels;
   bookAction: (formData: FormData) => Promise<void>;
   cancelAction: (formData: FormData) => Promise<void>;
+  checkInAction: (formData: FormData) => Promise<void>;
+  watchAction: (formData: FormData) => Promise<void>;
+  unwatchAction: (formData: FormData) => Promise<void>;
 };
 
 function Icon({ d, size = 18 }: { d: string; size?: number }) {
@@ -142,7 +159,7 @@ export default function BookingBoard(props: Props) {
     <div className={styles.cellWrap} key={key}>
       <button
         type="button"
-        className={`${styles.cell} ${styles[slot.state]} ${picked?.slot.start === slot.start ? styles.picked : ''}`}
+        className={`${styles.cell} ${styles[slot.state]} ${slot.inUse ? styles.inuse : ''} ${picked?.slot.start === slot.start ? styles.picked : ''}`}
         onClick={() => open(day, slot)}
         disabled={slot.state === 'closed'}
         aria-label={`${day.longLabel} ${slot.label}-${slot.endLabel}: ${stateLabel(slot) || labels.closed}`}
@@ -153,7 +170,14 @@ export default function BookingBoard(props: Props) {
             +
           </span>
         )}
-        {slot.state === 'mine' && <span>{labels.yours}</span>}
+        {slot.inUse ? (
+          <span className={styles.live}>
+            <i aria-hidden="true" />
+            {labels.inUse}
+          </span>
+        ) : (
+          slot.state === 'mine' && <span>{labels.yours}</span>
+        )}
       </button>
       {slot.state !== 'closed' && (
         <div className={`${styles.peek} ${col >= 5 ? styles.peekLeft : ''}`} aria-hidden="true">
@@ -162,7 +186,7 @@ export default function BookingBoard(props: Props) {
           </strong>
           {facility.name} · {facility.place}
           <br />
-          <span className={styles.peekTag}>{slot.state === 'free' ? labels.hoverBook : slot.state === 'mine' ? labels.hoverMine : labels.hoverTaken}</span>
+          <span className={styles.peekTag}>{slot.inUse ? labels.inUse : slot.state === 'free' ? labels.hoverBook : slot.state === 'mine' ? labels.hoverMine : labels.hoverTaken}</span>
         </div>
       )}
     </div>
@@ -241,7 +265,7 @@ export default function BookingBoard(props: Props) {
 
             {slot.state === 'taken' && (
               <>
-                <p className={styles.note}>{labels.takenBody}</p>
+                <p className={styles.note}>{slot.inUse ? labels.inUse : slot.watchId ? labels.watching : labels.takenBody}</p>
                 <div className={styles.sheetActions}>
                   <button type="button" className={styles.secondary} onClick={() => setPicked(null)}>
                     {labels.close}
@@ -252,6 +276,15 @@ export default function BookingBoard(props: Props) {
 
             {slot.state === 'mine' && (
               <>
+                {slot.checkIn && slot.checkIn.phase !== 'off' && (
+                  <p className={`${styles.checkNote} ${slot.checkIn.phase === 'open' ? styles.checkNoteOpen : ''}`}>
+                    {slot.checkIn.phase === 'checkedIn'
+                      ? labels.checkedIn
+                      : slot.checkIn.phase === 'open'
+                        ? fill(labels.openUntil, { time: slot.checkIn.untilLabel })
+                        : fill(labels.opensAt, { time: slot.checkIn.opensLabel })}
+                  </p>
+                )}
                 <p className={styles.note}>{slot.cancellable ? fill(labels.cancelUntil, { time: slot.deadlineLabel ?? '' }) : fill(labels.cancelClosed, { time: slot.deadlineLabel ?? '' })}</p>
                 <div className={styles.sheetActions}>
                   <a className={styles.secondary} href={`/book/ics/${slot.bookingId}`}>
@@ -263,8 +296,24 @@ export default function BookingBoard(props: Props) {
 
           </div>
         )}
-        {/* Both forms are always in the page (hidden until used), so they also work
+        {/* The forms are always in the page (hidden until used), so they also work
             as plain HTML forms and their actions are server rendered. */}
+        <form action={props.checkInAction} className={styles.sheetBody} style={{ paddingTop: 0 }} hidden={slot?.checkIn?.phase !== 'open'}>
+          <input type="hidden" name="bookingId" value={slot?.bookingId ?? ''} />
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <button className={styles.primary}>{labels.checkIn}</button>
+        </form>
+        <form action={props.watchAction} className={styles.sheetBody} style={{ paddingTop: 0 }} hidden={!(slot?.state === 'taken' && !slot.inUse && !slot.watchId)}>
+          <input type="hidden" name="facilityId" value={facility.id} />
+          <input type="hidden" name="startsAt" value={slot?.start ?? ''} />
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <button className={styles.primary}>{labels.notify}</button>
+        </form>
+        <form action={props.unwatchAction} className={styles.sheetBody} style={{ paddingTop: 0 }} hidden={!(slot?.state === 'taken' && slot.watchId)}>
+          <input type="hidden" name="watchId" value={slot?.watchId ?? ''} />
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <button className={styles.secondary}>{labels.unwatch}</button>
+        </form>
         <form action={props.cancelAction} className={styles.sheetBody} style={{ paddingTop: 0 }} hidden={!(slot?.state === 'mine' && slot.cancellable)}>
           <input type="hidden" name="bookingId" value={slot?.bookingId ?? ''} />
           <input type="hidden" name="returnTo" value={returnTo} />

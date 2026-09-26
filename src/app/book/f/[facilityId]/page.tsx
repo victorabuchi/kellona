@@ -11,10 +11,12 @@ import { isAmenityKind, isSpaceKind, limitIsPerKind, MAX_REPEAT_WEEKS } from '..
 import { cancelDeadline, canCancel, hoursInWeek, lengthOptions, overlaps, startHours, turnHours } from '../../../../lib/booking/rules';
 import { addDays, at, dayStart, formatDay, hh, nowMs, parseDay, weekStart } from '../../../../lib/booking/time';
 import { fmtWhen } from '../../../../lib/booking/format';
-import { bookAction, cancelBookingAction } from '../../../../lib/booking/actions';
+import { bookAction, cancelBookingAction, checkInAction, unwatchSlotAction, watchSlotAction } from '../../../../lib/booking/actions';
+import { releaseMissed } from '../../../../lib/booking/release';
+import { checkInPhase, checkInWindow, isInUse } from '../../../../lib/booking/checkin';
 import type { MessageKey } from '../../../../lib/i18n/messages';
 
-const ERRORS = ['invalid', 'past', 'tooFar', 'closed', 'tooLong', 'taken', 'weekly', 'capacity', 'outsider', 'notAvailable', 'notFound', 'tooLate'];
+const ERRORS = ['invalid', 'past', 'tooFar', 'closed', 'tooLong', 'taken', 'weekly', 'capacity', 'outsider', 'notAvailable', 'notFound', 'tooLate', 'checkinEarly', 'checkinLate'];
 
 // ISO 8601 week number, from local date parts.
 function isoWeek(date: Date): number {
@@ -42,6 +44,7 @@ const ICON = {
   cal: 'M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
   undo: 'M3 7v6h6M3 13a9 9 0 1 0 3-6.7L3 9',
   gauge: 'M12 14l4-4M3.3 17a10 10 0 1 1 17.4 0',
+  check: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
 };
 
 // Booking page for one facility: rules at a glance, weekly usage, and a week
@@ -55,12 +58,14 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
   if (!ctx) redirect('/book');
-  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number; maxRepeatWeeks: number }) | null;
+  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number; maxRepeatWeeks: number; checkInOpensMinutes: number; checkInGraceMinutes: number }) | null;
   if (!facility || !isAmenityKind(facility.kind) || facility.kind === 'parking') redirect('/book');
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
   if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect('/book');
 
   const now = nowMs();
+  // Free up bookings nobody checked in to before showing the week.
+  if (facility.checkInOpensMinutes > 0) await releaseMissed(org, scope, [facility], now);
   const today = dayStart(new Date(now));
   const selected = parseDay(one('day'), new Date(now));
   const week = weekStart(selected);
@@ -75,7 +80,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const siblings = limitIsPerKind(facility.kind)
     ? await scope.facilities.q().where({ buildingId: ctx.buildingId, kind: facility.kind }).orderBy((f) => f.name.asc()).all()
     : [];
-  const [bookings, mineWindow, people] = await Promise.all([
+  const [bookings, mineWindow, people, watches] = await Promise.all([
     scope.bookings
       .q()
       .where({ facilityId: facility.id })
@@ -90,7 +95,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
       .orderBy((b) => b.startsAt.asc())
       .all(),
     facility.capacity > 1 ? loadNeighbours(scope, ctx) : Promise.resolve({ roommates: [], others: [] }),
+    scope.watches.q().where({ facilityId: facility.id, residentId: viewer.id }).all(),
   ]);
+  const clock = (d: Date) => d.toLocaleTimeString(tag, { hour: '2-digit', minute: '2-digit' });
 
   const turns = turnHours(facility);
   const slotLen = turns ? facility.slotHours : 1;
@@ -117,6 +124,16 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
         deadlineLabel:
           state === 'mine' ? cancelDeadline(booking!.startsAt, facility.cancelCutoffMinutes).toLocaleString(tag, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : undefined,
         lengths: lengths.length ? lengths : [slotLen],
+        inUse: booking ? isInUse(booking, now) : false,
+        checkIn:
+          state === 'mine' && facility.checkInOpensMinutes > 0
+            ? {
+                phase: checkInPhase(booking!, facility, now),
+                opensLabel: clock(checkInWindow(booking!.startsAt, facility).opens),
+                untilLabel: clock(checkInWindow(booking!.startsAt, facility).closes),
+              }
+            : undefined,
+        watchId: state === 'taken' ? (watches.find((w) => w.startsAt === start.toISOString())?.id ?? null) : undefined,
       };
     });
     return {
@@ -138,7 +155,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const selectedIndex = Math.max(0, days.findIndex((d) => d.key === formatDay(selected < today ? today : selected)));
 
   const error = ERRORS.find((e) => e === one('error'));
-  const flash = one('ok') ? t('board.done') : '';
+  const flash = one('ok') === 'checkedin' ? t('checkin.done') : one('ok') === 'watching' ? t('checkin.watching') : one('ok') ? t('board.done') : '';
 
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/book" title={siblings.length > 1 ? t(`kind.${facility.kind}` as MessageKey) : facility.name}>
@@ -171,6 +188,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
         <Rule d={ICON.cal} text={t('board.ahead', { n: facility.advanceDays })} />
         <Rule d={ICON.undo} text={facility.cancelCutoffMinutes ? t('board.cancelRule', { n: facility.cancelCutoffMinutes }) : t('board.anytime')} />
         <Rule d={ICON.gauge} text={t('board.weekly', { n: facility.maxHoursPerWeek })} />
+        {facility.checkInOpensMinutes > 0 && (
+          <Rule d={ICON.check} text={t('checkin.rule', { before: facility.checkInOpensMinutes, after: facility.checkInGraceMinutes })} />
+        )}
       </div>
       {facility.description && (
         <details className={styles.info}>
@@ -228,6 +248,12 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
             <i className={`${styles.swatch} ${styles.sMine}`} />
             {t('board.yours')}
           </span>
+          {facility.checkInOpensMinutes > 0 && (
+            <span>
+              <i className={`${styles.swatch} ${styles.sInUse}`} />
+              {t('checkin.inUse')}
+            </span>
+          )}
         </div>
       </div>
 
@@ -279,6 +305,14 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
           repeatWeekly: t('board.repeatWeekly'),
           repeatFor: t('board.repeatFor'),
           repeatNote: t('board.repeatNote'),
+          inUse: t('checkin.inUse'),
+          checkIn: t('checkin.button'),
+          checkedIn: t('checkin.checkedIn'),
+          notify: t('checkin.notify'),
+          watching: t('checkin.watching'),
+          unwatch: t('checkin.unwatch'),
+          opensAt: t('checkin.opensAt', { time: '{time}' }),
+          openUntil: t('checkin.openUntil', { time: '{time}' }),
           hoursN: t('book.hours', { n: '{n}' }),
           after: t('board.after', { n: '{n}', max: '{max}' }),
           cancelUntil: t('board.cancelUntil', { time: '{time}' }),
@@ -286,6 +320,9 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
         }}
         bookAction={bookAction}
         cancelAction={cancelBookingAction}
+        checkInAction={checkInAction}
+        watchAction={watchSlotAction}
+        unwatchAction={unwatchSlotAction}
       />
       {flash && (
         <div className={styles.toast} role="status">

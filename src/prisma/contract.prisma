@@ -43,6 +43,8 @@ model Organization {
   participants        BookingParticipant[]
   parkingClaims       ParkingClaim[]
   pushSubscriptions   PushSubscription[]
+  releases            BookingRelease[]
+  watches             SlotWatch[]
 
   @@map("organization")
 }
@@ -151,6 +153,8 @@ model Resident {
   participations    BookingParticipant[]
   parkingClaim      ParkingClaim?
   pushSubscriptions PushSubscription[]
+  releases          BookingRelease[]
+  watches           SlotWatch[]
 
   @@unique([organizationId, email])
   @@index([unitId])
@@ -232,10 +236,16 @@ model Facility {
   cancelCutoffMinutes Int              @default(0)
   // How many weeks a booking can repeat (standing weekly turn). 1 = no repeating.
   maxRepeatWeeks     Int               @default(1)
+  // Check-in: opens this many minutes before the start (0 = no check-in) and
+  // stays open this many minutes after it. Unclaimed bookings are released.
+  checkInOpensMinutes Int              @default(0)
+  checkInGraceMinutes Int              @default(15)
   sortOrder          Int               @default(0)
   createdAt          TimestamptzString @default(now())
   bookings           Booking[]
   parkingClaim       ParkingClaim?
+  releases           BookingRelease[]
+  watches            SlotWatch[]
 
   @@unique([buildingId, name])
   @@index([organizationId])
@@ -286,6 +296,7 @@ model Booking {
   reminderSentAt TimestamptzString?
   // Set when the booker checks in (QR). Past bookings without it count as no-shows.
   checkedInAt    TimestamptzString?
+  checkInReminderSentAt TimestamptzString?
   createdAt      TimestamptzString    @default(now())
   participants   BookingParticipant[]
 
@@ -384,4 +395,39 @@ model AccessRequest {
 
   @@index([createdAt])
   @@map("access_request")
+}
+
+// A booking released because nobody checked in. Kept for staff no-show reports.
+model BookingRelease {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  facility       Facility          @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId     Uuid
+  resident       Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid
+  startsAt       TimestamptzString
+  endsAt         TimestamptzString
+  releasedAt     TimestamptzString @default(now())
+
+  @@index([organizationId, startsAt])
+  @@index([residentId])
+  @@map("booking_release")
+}
+
+// "Notify me if this time frees up" on a booked slot.
+model SlotWatch {
+  id             Uuid              @id @default(uuid())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId Uuid
+  facility       Facility          @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId     Uuid
+  resident       Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId     Uuid
+  startsAt       TimestamptzString
+  createdAt      TimestamptzString @default(now())
+
+  @@unique([facilityId, startsAt, residentId])
+  @@index([residentId])
+  @@map("slot_watch")
 }

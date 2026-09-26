@@ -8,6 +8,7 @@ import { createBookings, deleteBooking, loadAmenities, residentContext, resolveP
 import { isAmenityKind, MAX_REPEAT_WEEKS } from './kinds';
 import { notifyInvitees } from './notify';
 import { canCancel } from './rules';
+import { checkInPhase } from './checkin';
 import { fmtWhen } from './format';
 
 function facilityUrl(facilityId: string, params: Record<string, string>): string {
@@ -148,4 +149,43 @@ export async function releaseParkingAction() {
   if (claim) await scope.parkingClaims.q().where({ id: claim.id }).delete();
   revalidatePath('/book');
   redirect('/book/parking');
+}
+
+// The booker confirms they are using the facility, inside the check-in window.
+export async function checkInAction(formData: FormData) {
+  const { scope, viewer } = await requireResident();
+  const bookingId = String(formData.get('bookingId') ?? '');
+  const booking = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).include('facility', (f) => f).first();
+  const back = backTo(formData);
+  if (!booking?.facility) redirect(withParam(back, 'error', 'notFound'));
+  const phase = checkInPhase(booking, booking.facility, Date.now());
+  if (phase === 'notYet') redirect(withParam(back, 'error', 'checkinEarly'));
+  if (phase === 'missed' || phase === 'over') redirect(withParam(back, 'error', 'checkinLate'));
+  if (phase === 'open') await scope.bookings.q().where({ id: booking.id }).update({ checkedInAt: new Date().toISOString() });
+  revalidatePath('/book');
+  redirect(withParam(back, 'ok', 'checkedin'));
+}
+
+// "Notify me if it frees up" on a slot someone else booked.
+export async function watchSlotAction(formData: FormData) {
+  const { scope, viewer } = await requireResident();
+  const facilityId = String(formData.get('facilityId') ?? '');
+  const startsAt = new Date(String(formData.get('startsAt') ?? ''));
+  const back = backTo(formData);
+  const ctx = await residentContext(scope, viewer.id);
+  const facility = ctx ? await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first() : null;
+  if (facility && !Number.isNaN(startsAt.getTime()) && startsAt.getTime() > Date.now()) {
+    const iso = startsAt.toISOString();
+    if (!(await scope.watches.q().where({ facilityId, startsAt: iso, residentId: viewer.id }).first())) {
+      await scope.watches.create({ facilityId, startsAt: iso, residentId: viewer.id });
+    }
+  }
+  redirect(withParam(back, 'ok', 'watching'));
+}
+
+export async function unwatchSlotAction(formData: FormData) {
+  const { scope, viewer } = await requireResident();
+  const id = String(formData.get('watchId') ?? '');
+  await scope.watches.q().where({ id, residentId: viewer.id }).delete();
+  redirect(backTo(formData));
 }

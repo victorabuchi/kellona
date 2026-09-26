@@ -743,3 +743,68 @@
   background: var(--brand-tint);
   color: var(--brand-text);
 }
+
+/* Check-in */
+.inuse {
+  background: color-mix(in srgb, #f59f00 16%, var(--surface));
+  border-color: color-mix(in srgb, #f59f00 45%, var(--surface));
+  color: color-mix(in srgb, #9a5b00 85%, var(--text));
+}
+
+.mine.inuse {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.live i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live i {
+    animation: none;
+  }
+}
+
+.checkNote {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.checkNoteOpen {
+  background: color-mix(in srgb, #f59f00 16%, var(--surface));
+  color: color-mix(in srgb, #9a5b00 85%, var(--text));
+}
+
+.sInUse {
+  background: color-mix(in srgb, #f59f00 30%, var(--surface));
+  border: 1px solid color-mix(in srgb, #f59f00 50%, var(--surface));
+}

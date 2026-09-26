@@ -84,6 +84,7 @@ Also per organization: page title and description, favicon and theme color (`gen
 - Weekly standing turns: up to 12 weeks, same local hour across daylight saving (server runs with `TZ=Europe/Helsinki`). The first week follows every rule; later weeks may lie beyond the booking window but still respect clashes and the weekly limit. Skipped weeks are reported. A series is cancelled from a chosen week onward.
 - Parking: `ParkingClaim`, one spot per resident and one resident per spot.
 - Reminders: `GET /api/cron/reminders` with `Authorization: Bearer $CRON_SECRET`, run hourly. Each booking is reminded once, to the booker and accepted guests, by web push (VAPID) or by email when the resident has no working push subscription.
+- Check-in (per facility, `checkInOpensMinutes` > 0): the booker checks in from that many minutes before the start until `checkInGraceMinutes` after it (hub, facility board, or the door QR code). A push or email reminds them when the window opens. Bookings nobody checked in to are released: deleted, logged in `BookingRelease` as no-shows (shown on the staff overview), and residents who tapped "Notify me if it frees up" (`SlotWatch`) are told the time is free. Checked-in, running bookings show as "In use". Release runs from `GET /api/cron/checkins` every 5 minutes and also whenever a booking page loads.
 - Also: calendar file per booking (`/book/ics/<id>`), printable QR code per facility (`/manage/qr/<id>`) that opens its booking page on the organization's address.
 
 ## Areas and roles

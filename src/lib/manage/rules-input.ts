@@ -34,5 +34,7 @@ export function readRules(formData: FormData, kind: string, base?: Rules): Rules
     advanceDays: int(formData, 'advanceDays', 1, 365) ?? fallback.advanceDays,
     cancelCutoffMinutes: int(formData, 'cancelCutoffMinutes', 0, 10080) ?? fallback.cancelCutoffMinutes,
     maxRepeatWeeks: int(formData, 'maxRepeatWeeks', 1, MAX_REPEAT_WEEKS) ?? fallback.maxRepeatWeeks,
+    checkInOpensMinutes: int(formData, 'checkInOpensMinutes', 0, 240) ?? fallback.checkInOpensMinutes,
+    checkInGraceMinutes: int(formData, 'checkInGraceMinutes', 0, 120) ?? fallback.checkInGraceMinutes,
   };
 }

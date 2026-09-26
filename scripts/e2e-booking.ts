@@ -87,7 +87,7 @@ try {
   const tomorrow = addDays(dayStart(new Date()), 1);
   const t10 = at(tomorrow, 10);
   const laundryPage = await http('GET', host, `/book/f/${laundry.id}?day=${formatDay(tomorrow)}&pick=${encodeURIComponent(t10.toISOString())}`, { cookie: c1 });
-  const bookId = actionIn(laundryPage.body, 'name="startsAt"');
+  const bookId = actionIn(laundryPage.body, 'name="hours"');
   const book = (cookie: string, facilityId: string, start: Date, extra: Record<string, string | string[]> = {}) =>
     http('POST', host, `/book/f/${facilityId}`, { cookie, form: { [bookId]: '', facilityId, day: formatDay(start), startsAt: start.toISOString(), hours: '1', repeatWeeks: '1', ...extra } });
 
@@ -199,6 +199,43 @@ try {
   check('cancelling outside the cutoff works', !okCancel.location.includes('error') && !(await s.bookings.q().where({ id: late.id }).first()), okCancel.location);
   const board = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c1 });
   check('booking board renders the week grid with free and own slots', board.status === 200 && board.body.includes('role="grid"') && board.body.includes('name="startsAt"'));
+
+  // Check-in: laundry with a 20 min window and 15 min grace.
+  await s.facilities.q().where({ id: laundry.id }).update({ checkInOpensMinutes: 20, checkInGraceMinutes: 15 });
+  const hourNow = new Date();
+  hourNow.setMinutes(0, 0, 0);
+  const startsSoon = new Date(hourNow.getTime() + 60 * 60_000); // next full hour: window may or may not be ciOpen
+  const openStart = new Date(Date.now() + 10 * 60_000); // window ciOpen now (starts in 10 min)
+  const lateStart = new Date(Date.now() - 20 * 60_000); // grace passed (started 20 min ago)
+  const earlyStart = new Date(Date.now() + 3 * 3_600_000);
+  void startsSoon;
+  const mkB = (residentId: string, start: Date) =>
+    s.bookings.create({ facilityId: laundry.id, residentId, startsAt: start.toISOString(), endsAt: new Date(start.getTime() + 3_600_000).toISOString() });
+  const ciOpen = await mkB(r1.id, openStart);
+  const ciEarlyB = await mkB(r1.id, earlyStart);
+  const ciLate = await mkB(r2.id, lateStart);
+  await s.watches.create({ facilityId: laundry.id, residentId: r3.id, startsAt: ciLate.startsAt });
+  const boardCi = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c1 });
+  const ciAction = actionIn(boardCi.body, 'Check in');
+  const ciOk = await http('POST', host, `/book/f/${laundry.id}`, { cookie: c1, form: { [ciAction]: '', bookingId: ciOpen.id, returnTo: `/book/f/${laundry.id}` } });
+  check('check-in inside the window works', ciOk.location.includes('ok=checkedin') && Boolean((await s.bookings.q().where({ id: ciOpen.id }).first())?.checkedInAt), ciOk.location);
+  const ciEarly = await http('POST', host, `/book/f/${laundry.id}`, { cookie: c1, form: { [ciAction]: '', bookingId: ciEarlyB.id, returnTo: `/book/f/${laundry.id}` } });
+  check('check-in before the window is refused', ciEarly.location.includes('error=checkinEarly') && !(await s.bookings.q().where({ id: ciEarlyB.id }).first())?.checkedInAt, ciEarly.location);
+  check('a missed check-in is released when the board loads', !(await s.bookings.q().where({ id: ciLate.id }).first()));
+  const logged = await s.releases.q().where({ facilityId: laundry.id, residentId: r2.id }).all();
+  check('the release is logged as a no-show', logged.length === 1);
+  check('the watcher was notified and the watch removed', !(await s.watches.q().where({ facilityId: laundry.id, residentId: r3.id }).first()));
+  const boardAfter = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c3 });
+  check('the board shows the checked-in time as in use', boardAfter.body.includes('In use'));
+  const watchPage = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c3 });
+  const watchRes = await http('POST', host, `/book/f/${laundry.id}`, { cookie: c3, form: { [actionIn(watchPage.body, 'Notify me if it frees up')]: '', facilityId: laundry.id, startsAt: ciEarlyB.startsAt, returnTo: `/book/f/${laundry.id}` } });
+  check('residents can ask to be notified about a booked time', watchRes.location.includes('ok=watching') && Boolean(await s.watches.q().where({ facilityId: laundry.id, residentId: r3.id, startsAt: ciEarlyB.startsAt }).first()), watchRes.location);
+  const late2 = await mkB(r2.id, new Date(Date.now() - 25 * 60_000 - 3_600_000 * 2));
+  const cronCi = await fetch('http://127.0.0.1:3000/api/cron/checkins', { headers: { Authorization: `Bearer ${process.env['CRON_SECRET']}` } });
+  const cronJson = (await cronCi.json()) as { released: number };
+  check('the check-in cron releases missed bookings', cronCi.status === 200 && cronJson.released >= 1 && !(await s.bookings.q().where({ id: late2.id }).first()), JSON.stringify(cronJson));
+  for (const id of [ciOpen.id, ciEarlyB.id]) await s.bookings.q().where({ id }).delete();
+  await s.facilities.q().where({ id: laundry.id }).update({ checkInOpensMinutes: 0 });
 
   // Staff page and organization settings.
   const staffPage = await http('GET', host, '/manage/staff', { cookie: admin });
