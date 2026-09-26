@@ -181,6 +181,21 @@ try {
   const importedBuilding = await s.buildings.q().where({ name: 'C' }).first();
   check('CSV import created the building', Boolean(importedBuilding));
 
+  // Cancellation cutoff: a booking starting in an hour cannot be cancelled with a 120 minute cutoff.
+  await s.facilities.q().where({ id: room.id }).update({ cancelCutoffMinutes: 120 });
+  const soonStart = new Date(Date.now() + 60 * 60 * 1000);
+  soonStart.setMinutes(0, 0, 0);
+  soonStart.setHours(soonStart.getHours() + 1);
+  const late = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: soonStart.toISOString(), endsAt: new Date(soonStart.getTime() + 3_600_000).toISOString() });
+  const hubLate = await http('GET', host, '/book', { cookie: c1 });
+  const tooLate = await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hubLate.body, `name="bookingId" value="${late.id}"`)]: '', bookingId: late.id } });
+  check('cancelling inside the cutoff is refused', tooLate.location.includes('error=tooLate') && Boolean(await s.bookings.q().where({ id: late.id }).first()), tooLate.location);
+  await s.facilities.q().where({ id: room.id }).update({ cancelCutoffMinutes: 0 });
+  const okCancel = await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hubLate.body, `name="bookingId" value="${late.id}"`)]: '', bookingId: late.id } });
+  check('cancelling outside the cutoff works', !okCancel.location.includes('error') && !(await s.bookings.q().where({ id: late.id }).first()), okCancel.location);
+  const board = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c1 });
+  check('booking board renders the week grid with free and own slots', board.status === 200 && board.body.includes('role="grid"') && board.body.includes('name="startsAt"'));
+
   // Staff page and organization settings.
   const staffPage = await http('GET', host, '/manage/staff', { cookie: admin });
   check('staff page loads', staffPage.status === 200);
