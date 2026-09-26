@@ -55,6 +55,12 @@ model OrgDomain {
   organizationId Uuid
   host           String            @unique
   isPrimary      Boolean           @default(false)
+  // Proof of ownership: a TXT record _kellona.<host> = kellona-verification=<token>.
+  // Only verified domains serve the organization.
+  verificationToken String?
+  verifiedAt     TimestamptzString?
+  lastCheckedAt  TimestamptzString?
+  lastError      String?
   createdAt      TimestamptzString @default(now())
 
   @@index([organizationId])

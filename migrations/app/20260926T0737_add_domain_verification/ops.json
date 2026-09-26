@@ -1,0 +1,170 @@
+[
+  {
+    "id": "column.public.org_domain.lastCheckedAt",
+    "label": "Add column \"lastCheckedAt\" to \"org_domain\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "lastCheckedAt",
+        "table": "org_domain"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"lastCheckedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "lastCheckedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"lastCheckedAt\"",
+        "sql": "ALTER TABLE \"public\".\"org_domain\" ADD COLUMN \"lastCheckedAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"lastCheckedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "lastCheckedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.org_domain.lastError",
+    "label": "Add column \"lastError\" to \"org_domain\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "lastError",
+        "table": "org_domain"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"lastError\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "lastError"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"lastError\"",
+        "sql": "ALTER TABLE \"public\".\"org_domain\" ADD COLUMN \"lastError\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"lastError\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "lastError"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.org_domain.verificationToken",
+    "label": "Add column \"verificationToken\" to \"org_domain\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "verificationToken",
+        "table": "org_domain"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"verificationToken\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "verificationToken"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"verificationToken\"",
+        "sql": "ALTER TABLE \"public\".\"org_domain\" ADD COLUMN \"verificationToken\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"verificationToken\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "verificationToken"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.org_domain.verifiedAt",
+    "label": "Add column \"verifiedAt\" to \"org_domain\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "verifiedAt",
+        "table": "org_domain"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"verifiedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "verifiedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"verifiedAt\"",
+        "sql": "ALTER TABLE \"public\".\"org_domain\" ADD COLUMN \"verifiedAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"verifiedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "org_domain",
+          "verifiedAt"
+        ]
+      }
+    ]
+  }
+]

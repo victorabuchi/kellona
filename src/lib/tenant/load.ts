@@ -71,7 +71,8 @@ export async function loadOrgBySlug(slug: string): Promise<OrgContext | null> {
 }
 
 export async function loadOrgByHost(host: string): Promise<OrgContext | null> {
-  const domain = await db.orm.public.OrgDomain.where({ host }).first();
+  // Only a domain whose ownership was verified serves an organization.
+  const domain = await db.orm.public.OrgDomain.where({ host }).where((d) => d.verifiedAt.isNotNull()).first();
   if (!domain) return null;
   const row = await db.orm.public.Organization.where({ id: domain.organizationId }).include('brand', (b) => b).first();
   return row ? toContext(row) : null;
@@ -94,5 +95,5 @@ export async function findOrgAccountsByEmail(email: string): Promise<OrgAccount[
   const ids = [...new Set([...residents, ...staff].map((r) => r.organizationId))];
   if (!ids.length) return [];
   const orgs = await db.orm.public.Organization.where((o) => o.id.in(ids)).where((o) => o.status.neq('suspended')).include('domains', (d) => d).all();
-  return orgs.map((o) => ({ organizationId: o.id, slug: o.slug, name: o.name, primaryHost: o.domains.find((d) => d.isPrimary)?.host ?? null }));
+  return orgs.map((o) => ({ organizationId: o.id, slug: o.slug, name: o.name, primaryHost: o.domains.find((d) => d.isPrimary && d.verifiedAt)?.host ?? null }));
 }

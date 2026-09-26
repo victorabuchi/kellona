@@ -6,7 +6,9 @@ export function orgBaseUrl(org: { slug: string; primaryHost: string | null }, cu
   const config = hostConfigFromEnv();
   if (config.production) return `https://${org.primaryHost ?? `${org.slug}.${config.platformDomains[0]}`}`;
   const port = /:(\d+)$/.exec(currentHost ?? '')?.[1] ?? '3000';
-  const host = normalizeHost(org.primaryHost) ?? `${org.slug}.localhost`;
+  // A real domain cannot reach a local dev server, so only .localhost names are used here.
+  const primary = normalizeHost(org.primaryHost);
+  const host = primary && primary.endsWith('.localhost') ? primary : `${org.slug}.localhost`;
   return `http://${host}:${port}`;
 }
 
