@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { requestHost } from '../../../lib/tenant/request-host';
 import { redirect } from 'next/navigation';
 import { db } from '../../../prisma/db';
 import { getViewer } from '../../../lib/auth/viewer';
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const next = nextParam.startsWith('/platform') ? nextParam : '/platform';
   if (!(await getCurrentOrg())) redirect(next);
   const viewer = await getViewer();
-  const base = platformBaseUrl((await headers()).get('host'));
+  const base = platformBaseUrl(await requestHost());
   if (viewer?.kind !== 'admin') redirect(`${base}/login`);
   const { token, hash } = newLoginToken();
   await db.orm.public.LoginToken.create({ tokenHash: hash, email: viewer.email, organizationId: null, expiresAt: new Date(Date.now() + 60_000).toISOString() });

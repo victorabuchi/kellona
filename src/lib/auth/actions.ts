@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { requestHost } from '../tenant/request-host';
 import { db } from '../../prisma/db';
 import { orgScope } from '../tenant/scope';
 import { getCurrentOrg } from '../tenant/org';
@@ -13,7 +14,6 @@ import { clearFailures, isThrottled, recordFailure } from './throttle';
 import { requestOrigin } from './origin';
 import { LOGIN_LINK_MINUTES } from './constants';
 import { homeFor } from './home';
-import { headers } from 'next/headers';
 import { findOrgAccountsByEmail } from '../tenant/load';
 import { orgBaseUrl } from '../tenant/urls';
 
@@ -76,7 +76,7 @@ export async function requestLinkAction(formData: FormData) {
     const known = (await scope.residents.q().where({ email, status: 'active' }).first()) ?? (await scope.staff.q().where({ email }).first());
     if (known) targets.push({ organizationId: org.id, origin, senderName: org.senderName });
   } else {
-    const host = (await headers()).get('host');
+    const host = await requestHost();
     for (const account of await findOrgAccountsByEmail(email)) {
       targets.push({ organizationId: account.organizationId, origin: orgBaseUrl({ slug: account.slug, primaryHost: account.primaryHost }, host), senderName: account.name });
     }

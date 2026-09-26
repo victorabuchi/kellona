@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { headers } from 'next/headers';
+import { requestHost } from './request-host';
 import { notFound } from 'next/navigation';
 import { hostConfigFromEnv, isPlatformHost, normalizeHost, resolveOrgRef } from './host';
 import { loadOrgByHost, loadOrgBySlug, type OrgContext } from './load';
@@ -8,7 +8,7 @@ import { loadOrgByHost, loadOrgBySlug, type OrgContext } from './load';
 // Host header: a registered custom domain first, then <slug>.<platform domain>,
 // and nothing on the bare platform host.
 export const getCurrentOrg = cache(async (): Promise<OrgContext | null> => {
-  const rawHost = (await headers()).get('host');
+  const rawHost = await requestHost();
   const host = normalizeHost(rawHost);
   if (!host) return null;
 
@@ -27,5 +27,5 @@ export async function requireOrg(): Promise<OrgContext> {
 }
 
 export async function onPlatformHost(): Promise<boolean> {
-  return isPlatformHost((await headers()).get('host'), hostConfigFromEnv());
+  return isPlatformHost(await requestHost(), hostConfigFromEnv());
 }

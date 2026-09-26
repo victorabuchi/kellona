@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { requestHost } from '../lib/tenant/request-host';
 import styles from './shell.module.css';
 import Dropdown from './Dropdown';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -13,7 +14,6 @@ import { stopActingAction } from '../lib/auth/acting-actions';
 import { signOutAction } from '../lib/auth/actions';
 import { DEFAULT_BRAND } from '../lib/brand/defaults';
 import { readTheme } from '../lib/theme';
-import { headers } from 'next/headers';
 import { platformBaseUrl } from '../lib/tenant/urls';
 
 const ICONS = {
@@ -170,7 +170,7 @@ export default async function AppShell({
   title: string;
   children: React.ReactNode;
 }) {
-  const platformUrl = platformBaseUrl((await headers()).get('host'));
+  const platformUrl = platformBaseUrl(await requestHost());
   const nav = navFor(viewer, org, platformUrl);
   const brand = org?.brand ?? DEFAULT_BRAND;
   const isAdmin = viewer.kind === 'admin';

@@ -12,7 +12,7 @@ import { fmtWhen } from '../../lib/booking/format';
 import { nowMs } from '../../lib/booking/time';
 import { cancelBookingAction, cancelSeriesAction, respondInviteAction } from '../../lib/booking/actions';
 
-export const metadata: Metadata = { title: 'Book' };
+export const metadata: Metadata = { title: 'Booking' };
 
 type Card = { key: string; kind: AmenityKind; name: string; blurb: string; href: string };
 

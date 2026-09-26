@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { requestHost } from '../../../../lib/tenant/request-host';
 import { redirect } from 'next/navigation';
 import { db } from '../../../../prisma/db';
 import { getViewer } from '../../../../lib/auth/viewer';
@@ -17,6 +17,6 @@ export async function GET(_request: Request, ctx: RouteContext<'/platform/open/[
   const { token, hash } = newLoginToken();
   await db.orm.public.LoginToken.create({ tokenHash: hash, email: viewer.email, organizationId: null, expiresAt: new Date(Date.now() + 60_000).toISOString() });
   const primaryHost = org.domains.find((d) => d.isPrimary && d.verifiedAt)?.host ?? null;
-  const base = orgBaseUrl({ slug: org.slug, primaryHost }, (await headers()).get('host'));
+  const base = orgBaseUrl({ slug: org.slug, primaryHost }, await requestHost());
   redirect(`${base}/auth/handoff?token=${token}`);
 }

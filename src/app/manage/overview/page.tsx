@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
+import { requestHost } from '../../../lib/tenant/request-host';
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import AppShell from '../../../components/AppShell';
 import styles from '../../../components/app.module.css';
 import shell from '../../../components/shell.module.css';
@@ -120,7 +120,7 @@ export default async function OverviewPage() {
   const fmtAxis = (d: Date) => d.toLocaleDateString(locale === 'fi' ? 'fi-FI' : 'en-GB', { day: 'numeric', month: 'short' });
 
   const primary = domains.find((d) => d.isPrimary && d.verifiedAt)?.host ?? null;
-  const address = orgBaseUrl({ slug: org.slug, primaryHost: primary }, (await headers()).get('host'));
+  const address = orgBaseUrl({ slug: org.slug, primaryHost: primary }, await requestHost());
   const isAdmin = viewer.kind === 'admin';
   const canManage = buildingIds === null;
   const settings = '/manage/settings';

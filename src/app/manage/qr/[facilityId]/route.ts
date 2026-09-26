@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { requestHost } from '../../../../lib/tenant/request-host';
 import QRCode from 'qrcode';
 import { NextResponse } from 'next/server';
 import { getCurrentOrg } from '../../../../lib/tenant/org';
@@ -17,7 +17,7 @@ export async function GET(_request: Request, ctx: RouteContext<'/manage/qr/[faci
   const facility = await scope.facilities.q().where({ id: facilityId }).first();
   if (!facility) return new NextResponse('Not found', { status: 404 });
   const primary = (await scope.domains.q().where({ isPrimary: true }).where((d) => d.verifiedAt.isNotNull()).first())?.host ?? null;
-  const base = orgBaseUrl({ slug: org.slug, primaryHost: primary }, (await headers()).get('host'));
+  const base = orgBaseUrl({ slug: org.slug, primaryHost: primary }, await requestHost());
   const url = facility.kind === 'parking' ? `${base}/book/parking` : `${base}/book/f/${facility.id}`;
   const svg = await QRCode.toString(url, { type: 'svg', margin: 2, width: 512 });
   return new NextResponse(svg, { headers: { 'Content-Type': 'image/svg+xml', 'Content-Disposition': `inline; filename="qr-${facility.name}.svg"` } });
