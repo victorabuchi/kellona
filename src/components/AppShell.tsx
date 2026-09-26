@@ -195,7 +195,7 @@ export default async function AppShell({
         </>
       }
     >
-      <a href={`${platformUrl}/platform`} className={styles.popItem}>
+      <a href={org ? '/platform/home' : '/platform'} className={styles.popItem}>
         <Icon name="back" size={16} />
         {t('nav.allOrgs')}
       </a>
@@ -217,7 +217,7 @@ export default async function AppShell({
         ))}
       </div>
       <div className={styles.popDivider} />
-      <a href={`${platformUrl}/platform?new=1`} className={styles.popItem}>
+      <a href={org ? `/platform/home?next=${encodeURIComponent('/platform?new=1')}` : '/platform?new=1'} className={styles.popItem}>
         <Icon name="plus" size={16} />
         {t('nav.newOrg')}
       </a>

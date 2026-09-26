@@ -43,9 +43,9 @@ export default async function AccountPage() {
       </div>
       <div className={styles.actions}>
         {viewer.kind === 'admin' && (
-          <Link className={styles.btn} href="/platform">
+          <a className={styles.btn} href={org ? '/platform/home' : '/platform'}>
             {t('account.platform')}
-          </Link>
+          </a>
         )}
         <Link className={styles.btnGhost} href="/privacy">
           {t('common.privacy')}

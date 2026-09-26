@@ -8,6 +8,7 @@ import { db } from '../../prisma/db';
 import { getCurrentOrg } from '../../lib/tenant/org';
 import { orgScope } from '../../lib/tenant/scope';
 import { getT } from '../../lib/i18n';
+import { ensurePlatformHost } from '../../lib/tenant/platform-only';
 import { requireAdmin } from '../../lib/auth/viewer';
 import { createOrgAction } from '../../lib/platform/actions';
 import { DEFAULT_BRAND } from '../../lib/brand/defaults';
@@ -16,6 +17,7 @@ export const metadata: Metadata = { title: 'Organizations' };
 
 export default async function PlatformPage({ searchParams }: PageProps<'/platform'>) {
   const sp = await searchParams;
+  await ensurePlatformHost('/platform');
   const viewer = await requireAdmin();
   const here = await getCurrentOrg();
   const { t, locale } = await getT(here);

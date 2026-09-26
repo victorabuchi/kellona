@@ -4,11 +4,13 @@ import styles from '../../../components/app.module.css';
 import { db } from '../../../prisma/db';
 import { getCurrentOrg } from '../../../lib/tenant/org';
 import { getT } from '../../../lib/i18n';
+import { ensurePlatformHost } from '../../../lib/tenant/platform-only';
 import { requireAdmin } from '../../../lib/auth/viewer';
 
 export const metadata: Metadata = { title: 'Pilot requests' };
 
 export default async function RequestsPage() {
+  await ensurePlatformHost('/platform/requests');
   const viewer = await requireAdmin();
   const here = await getCurrentOrg();
   const { t, locale } = await getT(here);
