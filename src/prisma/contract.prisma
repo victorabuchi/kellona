@@ -355,3 +355,21 @@ model LoginToken {
   @@index([email])
   @@map("login_token")
 }
+
+// Platform level: a housing organization asking for a Kellona pilot via /signup.
+model AccessRequest {
+  id               Uuid              @id @default(uuid())
+  organizationName String
+  contactName      String
+  email            String
+  phone            String?
+  residents        Int?
+  message          String?
+  locale           String            @default("fi")
+  // 'new' | 'contacted' | 'closed'
+  status           String            @default("new")
+  createdAt        TimestamptzString @default(now())
+
+  @@index([createdAt])
+  @@map("access_request")
+}

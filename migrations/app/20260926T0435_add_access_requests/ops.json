@@ -1,0 +1,80 @@
+[
+  {
+    "id": "table.access_request",
+    "label": "Create table \"access_request\"",
+    "summary": "Creates table \"access_request\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "access_request"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"access_request\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"access_request\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"access_request\"",
+        "sql": "CREATE TABLE \"public\".\"access_request\" (\n  \"contactName\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"locale\" text DEFAULT 'fi' NOT NULL,\n  \"message\" text,\n  \"organizationName\" text NOT NULL,\n  \"phone\" text,\n  \"residents\" int4,\n  \"status\" text DEFAULT 'new' NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"access_request\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"access_request\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.access_request.access_request_createdAt_idx_9575dbd7",
+    "label": "Create index \"access_request_createdAt_idx_9575dbd7\" on \"access_request\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "access_request_createdAt_idx_9575dbd7",
+        "table": "access_request"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"access_request_createdAt_idx_9575dbd7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"access_request_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"access_request_createdAt_idx_9575dbd7\"",
+        "sql": "CREATE INDEX \"access_request_createdAt_idx_9575dbd7\" ON \"public\".\"access_request\" (\"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"access_request_createdAt_idx_9575dbd7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"access_request_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ]
+  }
+]
