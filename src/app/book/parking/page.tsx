@@ -7,6 +7,7 @@ import { requireResident } from '../../../lib/auth/access';
 import { getT } from '../../../lib/i18n';
 import { loadAmenities, residentContext } from '../../../lib/booking/engine';
 import { claimParkingAction, releaseParkingAction } from '../../../lib/booking/actions';
+import Flash from '../../../components/Flash';
 
 export const metadata: Metadata = { title: 'Parking' };
 
@@ -32,7 +33,7 @@ export default async function ParkingPage({ searchParams }: PageProps<'/book/par
         {t('book.allFacilities')}
       </Link>
       <p className={styles.lede}>{t('parking.lede')}</p>
-      {errorKey && <p className={styles.alert}>{t(errorKey)}</p>}
+      {errorKey && <Flash className={styles.alert} tone="err">{t(errorKey)}</Flash>}
       <ul className={styles.list}>
         {spots.map((spot) => {
           const claim = claims.find((c) => c.facilityId === spot.id);

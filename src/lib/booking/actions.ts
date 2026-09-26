@@ -3,69 +3,47 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireResident } from '../auth/access';
-import { getT } from '../i18n';
-import { createBookings, deleteBooking, loadAmenities, residentContext, resolveParticipants, type FacilityRow } from './engine';
-import { isAmenityKind, MAX_REPEAT_WEEKS } from './kinds';
-import { notifyInvitees } from './notify';
+import { deleteBooking, loadAmenities, residentContext } from './engine';
 import { canCancel } from './rules';
-import { checkInPhase } from './checkin';
-import { fmtWhen } from './format';
+import { performBook, performCancel, performCheckIn, performWatch, type Outcome } from './perform';
 
 function facilityUrl(facilityId: string, params: Record<string, string>): string {
   return `/book/f/${facilityId}?${new URLSearchParams(params).toString()}`;
 }
 
-function intIn(formData: FormData, name: string, min: number, max: number, fallback: number): number {
-  const n = Number.parseInt(String(formData.get(name) ?? ''), 10);
-  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
-}
 
 export async function bookAction(formData: FormData) {
-  const { org, scope, viewer } = await requireResident();
   const facilityId = String(formData.get('facilityId') ?? '');
   const day = String(formData.get('day') ?? '');
-  const ctx = await residentContext(scope, viewer.id);
-  if (!ctx) redirect('/book');
-
-  const facility = (await scope.facilities.q().where({ id: facilityId }).first()) as FacilityRow | null;
-  if (!facility || facility.buildingId !== ctx.buildingId || !isAmenityKind(facility.kind) || facility.kind === 'parking') {
-    redirect(facilityUrl(facilityId, { day, error: 'notFound' }));
-  }
-  const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
-  if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect(facilityUrl(facilityId, { day, error: 'notAvailable' }));
-  if ((facility as { outOfOrder?: boolean }).outOfOrder) redirect(facilityUrl(facilityId, { day, error: 'outOfOrder' }));
-
-  let participantIds: string[] = [];
-  if (facility.capacity > 1) {
-    const ids = formData.getAll('participants').map(String).filter(Boolean);
-    const people = await resolveParticipants(scope, ctx, { ids, wholeApartment: formData.get('inviteApartment') === '1' }, facility.capacity);
-    if (!people.ok) redirect(facilityUrl(facilityId, { day, error: people.reason }));
-    participantIds = people.ids;
-  }
-
-  const start = new Date(String(formData.get('startsAt') ?? ''));
-  const result = await createBookings({
-    scope,
-    ctx,
-    facility,
-    start,
-    hours: intIn(formData, 'hours', 1, 24, facility.slotHours),
-    // Never more weeks than this facility allows.
-    repeatWeeks: intIn(formData, 'repeatWeeks', 1, Math.max(1, Math.min(MAX_REPEAT_WEEKS, (facility as { maxRepeatWeeks?: number }).maxRepeatWeeks ?? 1)), 1),
-    participantIds,
-    note: String(formData.get('note') ?? '').trim().slice(0, 200) || null,
-    now: Date.now(),
-  });
-  if (result.error) redirect(facilityUrl(facilityId, { day, error: result.error }));
-
-  if (participantIds.length && result.created[0]) {
-    const { t } = await getT(org);
-    await notifyInvitees(org, scope, participantIds, `${ctx.name}: ${facility.name}, ${fmtWhen(start.toISOString(), org.defaultLocale === 'en' ? 'en' : 'fi', org.timezone)}`, t('book.invites'));
-  }
+  const result = await performBook(formData);
+  if (!result.ok) redirect(facilityUrl(facilityId, { day, error: result.code }));
   revalidatePath('/book');
   const params: Record<string, string> = { day, ok: 'booked' };
   if (result.skipped) params['skipped'] = String(result.skipped);
   redirect(facilityUrl(facilityId, params));
+}
+
+// The live board calls these and stays on the page; they report what happened.
+export async function boardBookAction(formData: FormData): Promise<Outcome> {
+  const result = await performBook(formData);
+  if (result.ok) revalidatePath('/book', 'layout');
+  return result;
+}
+
+export async function boardCancelAction(bookingId: string): Promise<Outcome> {
+  const result = await performCancel(bookingId);
+  if (result.ok) revalidatePath('/book', 'layout');
+  return result;
+}
+
+export async function boardCheckInAction(bookingId: string): Promise<Outcome> {
+  const result = await performCheckIn(bookingId);
+  if (result.ok) revalidatePath('/book', 'layout');
+  return result;
+}
+
+export async function boardWatchAction(facilityId: string, startsAt: string): Promise<Outcome> {
+  return performWatch(facilityId, startsAt);
 }
 
 function backTo(formData: FormData, fallback = '/book'): string {
@@ -82,13 +60,8 @@ function withParam(url: string, key: string, value: string): string {
 
 // Residents cancel until the facility's cutoff; staff can always cancel.
 export async function cancelBookingAction(formData: FormData) {
-  const { scope, viewer } = await requireResident();
-  const bookingId = String(formData.get('bookingId') ?? '');
-  const booking = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).include('facility', (f) => f).first();
-  if (booking && !canCancel(booking.startsAt, booking.facility?.cancelCutoffMinutes ?? 0, Date.now())) {
-    redirect(withParam(backTo(formData), 'error', 'tooLate'));
-  }
-  if (booking) await deleteBooking(scope, booking.id);
+  const result = await performCancel(String(formData.get('bookingId') ?? ''));
+  if (!result.ok && result.code === 'tooLate') redirect(withParam(backTo(formData), 'error', 'tooLate'));
   revalidatePath('/book');
   redirect(backTo(formData));
 }
@@ -154,34 +127,17 @@ export async function releaseParkingAction() {
 
 // The booker confirms they are using the facility, inside the check-in window.
 export async function checkInAction(formData: FormData) {
-  const { scope, viewer } = await requireResident();
-  const bookingId = String(formData.get('bookingId') ?? '');
-  const booking = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).include('facility', (f) => f).first();
+  const result = await performCheckIn(String(formData.get('bookingId') ?? ''));
   const back = backTo(formData);
-  if (!booking?.facility) redirect(withParam(back, 'error', 'notFound'));
-  const phase = checkInPhase(booking, booking.facility, Date.now());
-  if (phase === 'notYet') redirect(withParam(back, 'error', 'checkinEarly'));
-  if (phase === 'missed' || phase === 'over') redirect(withParam(back, 'error', 'checkinLate'));
-  if (phase === 'open') await scope.bookings.q().where({ id: booking.id }).update({ checkedInAt: new Date().toISOString() });
+  if (!result.ok) redirect(withParam(back, 'error', result.code));
   revalidatePath('/book');
   redirect(withParam(back, 'ok', 'checkedin'));
 }
 
 // "Notify me if it frees up" on a slot someone else booked.
 export async function watchSlotAction(formData: FormData) {
-  const { scope, viewer } = await requireResident();
-  const facilityId = String(formData.get('facilityId') ?? '');
-  const startsAt = new Date(String(formData.get('startsAt') ?? ''));
-  const back = backTo(formData);
-  const ctx = await residentContext(scope, viewer.id);
-  const facility = ctx ? await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first() : null;
-  if (facility && !Number.isNaN(startsAt.getTime()) && startsAt.getTime() > Date.now()) {
-    const iso = startsAt.toISOString();
-    if (!(await scope.watches.q().where({ facilityId, startsAt: iso, residentId: viewer.id }).first())) {
-      await scope.watches.create({ facilityId, startsAt: iso, residentId: viewer.id });
-    }
-  }
-  redirect(withParam(back, 'ok', 'watching'));
+  await performWatch(String(formData.get('facilityId') ?? ''), String(formData.get('startsAt') ?? ''));
+  redirect(withParam(backTo(formData), 'ok', 'watching'));
 }
 
 export async function unwatchSlotAction(formData: FormData) {

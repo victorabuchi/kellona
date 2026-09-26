@@ -13,12 +13,15 @@ import { nowMs } from '../../lib/booking/time';
 import { cancelBookingAction, cancelSeriesAction, checkInAction, respondInviteAction } from '../../lib/booking/actions';
 import { releaseMissed } from '../../lib/booking/release';
 import { checkInPhase } from '../../lib/booking/checkin';
+import { canCancel } from '../../lib/booking/rules';
+import ConfirmCancel from '../../components/ConfirmCancel';
+import Flash from '../../components/Flash';
 
 export const metadata: Metadata = { title: 'Booking' };
 
 type Card = { key: string; kind: AmenityKind; name: string; blurb: string; href: string; out?: boolean };
 
-export default async function BookHubPage() {
+export default async function BookHubPage({ searchParams }: PageProps<'/book'>) {
   const { org, scope, viewer } = await requireResident();
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
@@ -32,6 +35,8 @@ export default async function BookHubPage() {
   const now = nowMs();
   const nowIso = new Date(now).toISOString();
   const when = (iso: string) => fmtWhen(iso, locale, org.timezone);
+  const tooLate = (await searchParams)['error'] === 'tooLate';
+  const cancelLabels = { cancel: t('book.cancel'), confirm: t('board.cancelConfirm'), yes: t('board.cancelYes'), keep: t('board.cancelKeep') };
 
   // Free up bookings nobody checked in to in this building.
   const checkInFacilities = await scope.facilities.q().where({ buildingId: ctx.buildingId }).where((f) => f.checkInOpensMinutes.gt(0)).all();
@@ -81,6 +86,11 @@ export default async function BookHubPage() {
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/book" title={t('book.title')}>
       <p className={styles.lede}>{t('book.lede', { building: ctx.buildingName })}</p>
+      {tooLate && (
+        <Flash className={styles.alert} tone="err">
+          {t('book.error.tooLate')}
+        </Flash>
+      )}
 
       {invites.length > 0 && (
         <section className={styles.section}>
@@ -166,10 +176,9 @@ export default async function BookHubPage() {
                     <a className={styles.btnGhost} href={`/book/ics/${b.id}`}>
                       {t('book.calendar')}
                     </a>
-                    <form action={cancelBookingAction}>
-                      <input type="hidden" name="bookingId" value={b.id} />
-                      <button className={styles.btnDanger}>{t('book.cancel')}</button>
-                    </form>
+                    {canCancel(b.startsAt, b.facility!.cancelCutoffMinutes, now, b.createdAt) && (
+                      <ConfirmCancel action={cancelBookingAction} bookingId={b.id} labels={cancelLabels} />
+                    )}
                     {b.seriesId && (
                       <form action={cancelSeriesAction}>
                         <input type="hidden" name="bookingId" value={b.id} />

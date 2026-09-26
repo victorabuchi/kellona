@@ -539,3 +539,45 @@
   border-radius: var(--radius-sm);
   background: #16191e;
 }
+
+.btnDangerSolid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--danger);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  animation: confirmIn 0.15s ease both;
+}
+
+.confirmText {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@keyframes confirmIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}

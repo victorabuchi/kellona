@@ -2,7 +2,7 @@
 // HTTP checks cannot cover: pages rendered right after a server action run
 // through Next's internal request (see src/lib/tenant/request-host.ts).
 // Usage: E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD='...' npx tsx scripts/e2e-browser.ts [org-slug]
-import { Browser } from './lib/chrome';
+import { Browser } from './lib/browser';
 
 const slug = process.argv[2] ?? 'demo-north';
 const email = process.env['E2E_ADMIN_EMAIL']!;

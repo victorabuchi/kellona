@@ -9,6 +9,7 @@ import { residentContext } from '../../../lib/booking/engine';
 import { fmtWhen } from '../../../lib/booking/format';
 import { REPORT_CATEGORIES } from '../../../lib/support/constants';
 import { sendReportAction } from '../../../lib/support/actions';
+import Flash from '../../../components/Flash';
 
 export const metadata: Metadata = { title: 'Report a problem' };
 
@@ -35,8 +36,8 @@ export default async function ReportPage({ searchParams }: PageProps<'/book/repo
           </span>
         </a>
       )}
-      {sp['sent'] && <p className={styles.ok}>{t('report.sent')}</p>}
-      {sp['error'] && <p className={styles.alert}>{t('report.error')}</p>}
+      {sp['sent'] && <Flash className={styles.ok} ms={4000}>{t('report.sent')}</Flash>}
+      {sp['error'] && <Flash className={styles.alert} tone="err">{t('report.error')}</Flash>}
 
       <form action={sendReportAction} className={`${styles.card} ${styles.form}`}>
         <label className={styles.field}>

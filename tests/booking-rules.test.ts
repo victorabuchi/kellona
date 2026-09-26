@@ -82,3 +82,13 @@ test('cancellation cutoff', async () => {
   assert.equal(canCancel(new Date(2026, 8, 28, 11, 0), 0, now), false, 'started bookings cannot be cancelled');
   assert.equal(cancelDeadline(start, 120).getHours(), 12);
 });
+
+test('a fresh booking can be undone inside the cutoff, until it starts', async () => {
+  const { canCancel } = await import('../src/lib/booking/rules');
+  const now = new Date(2026, 8, 26, 14, 40).getTime();
+  const start = new Date(2026, 8, 26, 15, 0);
+  assert.equal(canCancel(start, 120, now), false, 'inside the cutoff');
+  assert.equal(canCancel(start, 120, now, new Date(2026, 8, 26, 14, 34)), true, 'booked 6 minutes ago');
+  assert.equal(canCancel(start, 120, now, new Date(2026, 8, 26, 14, 25)), false, 'booked 15 minutes ago');
+  assert.equal(canCancel(new Date(2026, 8, 26, 14, 0), 120, now, new Date(2026, 8, 26, 14, 35)), false, 'already started');
+});

@@ -4,6 +4,9 @@ import styles from './shell.module.css';
 import Dropdown from './Dropdown';
 import ThemeSwitcher from './ThemeSwitcher';
 import CommandPalette, { type PaletteItem } from './CommandPalette';
+import LangToggle from './LangToggle';
+import { Suspense } from 'react';
+import { getLocale } from '../lib/i18n';
 import { orgScope } from '../lib/tenant/scope';
 import { db } from '../prisma/db';
 import type { OrgContext } from '../lib/tenant/load';
@@ -200,6 +203,7 @@ export default async function AppShell({
   const mark = org ? (brand.appIconUrl ?? brand.faviconUrl ?? brand.logoLightUrl) : DEFAULT_BRAND.appIconUrl!;
   const home = nav.sections[0]![0]!.href;
   const theme = await readTheme();
+  const locale = await getLocale(org);
   const orgs = isAdmin ? await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all() : [];
   // Phones fit five tabs: the first four pages plus Account (which links the rest).
   const allTabs = [...nav.sections.flat(), ...nav.bottom.filter((i) => !i.external)];
@@ -289,6 +293,9 @@ export default async function AppShell({
         )}
 
         <div className={styles.topRight}>
+          <Suspense fallback={null}>
+            <LangToggle current={locale} locales={org?.locales ?? ['fi', 'en']} label={t('common.language')} />
+          </Suspense>
           <CommandPalette
             items={palette}
             labels={{

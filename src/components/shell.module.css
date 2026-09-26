@@ -1440,33 +1440,6 @@
   color: #c2410c;
 }
 
-.faq {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.faqItem + .faqItem {
-  border-top: 1px solid var(--border);
-}
-
-.faqItem summary {
-  cursor: pointer;
-  padding: 16px 18px;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.faqBody {
-  padding: 0 18px 18px;
-  color: var(--muted);
-  line-height: 1.6;
-  white-space: pre-line;
-}
-
 .contactCard {
   display: flex;
   flex-direction: column;
@@ -1503,4 +1476,221 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.langForm {
+  display: inline-flex;
+}
+
+.langSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 36px;
+  padding: 0 32px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23767676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  color: var(--brand-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.langSelect:hover {
+  border-color: color-mix(in srgb, var(--brand-text) 40%, var(--border));
+}
+
+.langSelect:focus-visible {
+  outline: none;
+  border-color: var(--brand-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-text) 18%, transparent);
+}
+
+/* Help and rules: accordion cards with numbered points. */
+.helpList {
+  display: grid;
+  gap: 12px;
+}
+
+.helpCard {
+  interpolate-size: allow-keywords;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.helpCard[open] {
+  border-color: color-mix(in srgb, var(--brand-text) 35%, var(--border));
+  box-shadow: 0 18px 40px -28px color-mix(in srgb, var(--brand-text) 60%, transparent);
+}
+
+.helpCard::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 0.3s ease, content-visibility 0.3s allow-discrete;
+}
+
+.helpCard[open]::details-content {
+  block-size: auto;
+}
+
+.helpHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px 14px 16px;
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.helpHead::-webkit-details-marker,
+.helpHead::marker {
+  display: none;
+  content: '';
+}
+
+.helpHead:hover .helpToggle {
+  background: color-mix(in srgb, var(--brand-text) 14%, var(--surface));
+}
+
+.helpIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--brand-tint);
+  color: var(--brand-text);
+}
+
+.helpTitle {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.helpTitle strong {
+  font-size: 16px;
+}
+
+.helpTitle span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.helpToggle {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--brand-text);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+}
+
+.helpCard[open] .helpToggle {
+  transform: rotate(135deg);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.helpPoints {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 16px;
+  list-style: none;
+}
+
+.helpPoints li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.helpPoints p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.helpNum {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ruleCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.ruleCardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+}
+
+.ruleTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ruleTiles li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ruleTileIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--brand-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helpCard::details-content,
+  .helpToggle {
+    transition: none;
+  }
 }

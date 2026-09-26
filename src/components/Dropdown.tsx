@@ -9,12 +9,14 @@ export default function Dropdown({
   label,
   align = 'left',
   buttonClass,
+  popClass,
   children,
 }: {
   button: React.ReactNode;
   label: string;
   align?: 'left' | 'right';
   buttonClass?: string;
+  popClass?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -39,10 +41,10 @@ export default function Dropdown({
       </button>
       {open && (
         <div
-          className={`${styles.popover} ${align === 'right' ? styles.popoverRight : ''}`}
+          className={`${styles.popover} ${align === 'right' ? styles.popoverRight : ''} ${popClass ?? ''}`}
           role="menu"
           onClick={(e) => {
-            if ((e.target as HTMLElement).closest('a')) setOpen(false);
+            if ((e.target as HTMLElement).closest('a, button[type=submit]')) setOpen(false);
           }}
         >
           {children}

@@ -1,16 +1,17 @@
 // Minimal headless Chrome driver over the DevTools protocol, for layout checks
 // and screenshots without extra dependencies. Node's global WebSocket is used.
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const CHROME_PATHS = [
   process.env['CHROME_PATH'],
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
   '/usr/bin/google-chrome',
   '/usr/bin/chromium',
-].filter(Boolean) as string[];
+].filter((p): p is string => Boolean(p) && existsSync(p!));
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
 
@@ -72,6 +73,7 @@ export class Browser {
     };
     await browser.send('Page.enable');
     await browser.send('Runtime.enable');
+    await browser.send('Network.enable');
     return browser;
   }
 
@@ -113,6 +115,22 @@ export class Browser {
   async screenshot(): Promise<Buffer> {
     const res = await this.send<{ data: string }>('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     return Buffer.from(res.data, 'base64');
+  }
+
+  async setCookie(cookie: { name: string; value: string; domain: string; path?: string; httpOnly?: boolean }) {
+    await this.send('Network.setCookie', { path: '/', ...cookie });
+  }
+
+  async clearCookies() {
+    await this.send('Network.clearBrowserCookies');
+  }
+
+  // A real mouse press at a point, held for holdMs (long press when large).
+  async press(p: { x: number; y: number }, holdMs = 40) {
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: p.x, y: p.y });
+    await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: p.x, y: p.y, button: 'left', clickCount: 1 });
+    await new Promise((r) => setTimeout(r, holdMs));
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x, y: p.y, button: 'left', clickCount: 1 });
   }
 
   async close() {

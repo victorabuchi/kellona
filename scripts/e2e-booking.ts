@@ -190,13 +190,23 @@ try {
   const soonStart = new Date(Date.now() + 60 * 60 * 1000);
   soonStart.setMinutes(0, 0, 0);
   soonStart.setHours(soonStart.getHours() + 1);
-  const late = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: soonStart.toISOString(), endsAt: new Date(soonStart.getTime() + 3_600_000).toISOString() });
+  // Made 20 minutes ago, so the just-booked undo window is over.
+  const late = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: soonStart.toISOString(), endsAt: new Date(soonStart.getTime() + 3_600_000).toISOString(), createdAt: new Date(Date.now() - 20 * 60_000).toISOString() });
+  // A far-off booking still shows its cancel form; the cancel action is the same for every row.
+  const farStart = new Date(soonStart.getTime() + 2 * 86_400_000);
+  const farBooking = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: farStart.toISOString(), endsAt: new Date(farStart.getTime() + 3_600_000).toISOString() });
   const hubLate = await http('GET', host, '/book', { cookie: c1 });
-  const tooLate = await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hubLate.body, `name="bookingId" value="${late.id}"`)]: '', bookingId: late.id } });
+  check('no cancel button once cancelling has closed', !hubLate.body.includes(`name="bookingId" value="${late.id}"`));
+  const cancelId = actionIn(hubLate.body, `name="bookingId" value="${farBooking.id}"`);
+  const tooLate = await http('POST', host, '/book', { cookie: c1, form: { [cancelId]: '', bookingId: late.id } });
   check('cancelling inside the cutoff is refused', tooLate.location.includes('error=tooLate') && Boolean(await s.bookings.q().where({ id: late.id }).first()), tooLate.location);
+  const fresh = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: new Date(soonStart.getTime() + 3_600_000).toISOString(), endsAt: new Date(soonStart.getTime() + 7_200_000).toISOString() });
+  const undo = await http('POST', host, '/book', { cookie: c1, form: { [cancelId]: '', bookingId: fresh.id } });
+  check('a booking made moments ago can be undone inside the cutoff', !undo.location.includes('error') && !(await s.bookings.q().where({ id: fresh.id }).first()), undo.location);
   await s.facilities.q().where({ id: room.id }).update({ cancelCutoffMinutes: 0 });
-  const okCancel = await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hubLate.body, `name="bookingId" value="${late.id}"`)]: '', bookingId: late.id } });
+  const okCancel = await http('POST', host, '/book', { cookie: c1, form: { [cancelId]: '', bookingId: late.id } });
   check('cancelling outside the cutoff works', !okCancel.location.includes('error') && !(await s.bookings.q().where({ id: late.id }).first()), okCancel.location);
+  await s.bookings.q().where({ id: farBooking.id }).delete();
   const board = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c1 });
   check('booking board renders the week grid with free and own slots', board.status === 200 && board.body.includes('role="grid"') && board.body.includes('name="startsAt"'));
 

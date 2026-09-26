@@ -3,7 +3,7 @@ import type { Rules } from './kinds';
 
 // Pure booking rules, shared by the server actions and the unit tests.
 
-export type RuleError = 'invalid' | 'past' | 'tooFar' | 'closed' | 'tooLong' | 'taken' | 'weekly' | 'capacity' | 'outsider' | 'notAvailable' | 'notFound';
+export type RuleError = 'invalid' | 'past' | 'tooFar' | 'closed' | 'tooLong' | 'taken' | 'mine' | 'weekly' | 'capacity' | 'outsider' | 'notAvailable' | 'notFound';
 
 export function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
   return aStart < bEnd && bStart < aEnd;
@@ -61,10 +61,17 @@ export function hoursInWeek(busy: Busy[], residentId: string, start: Date): numb
     .reduce((sum, b) => sum + (b.end - b.start) / 3_600_000, 0);
 }
 
-// A booking can be cancelled until the facility's cutoff before it starts.
-export function canCancel(startsAt: string | Date, cutoffMinutes: number, now: number): boolean {
+// Minutes after booking during which a booking can always be undone, even
+// inside the cutoff, so a mistaken tap is never stuck.
+export const UNDO_MINUTES = 10;
+
+// A booking can be cancelled until the facility's cutoff before it starts, or
+// within UNDO_MINUTES of being made, as long as it has not started.
+export function canCancel(startsAt: string | Date, cutoffMinutes: number, now: number, createdAt?: string | Date | null): boolean {
   const start = new Date(startsAt).getTime();
-  return start - now >= Math.max(0, cutoffMinutes) * 60_000 && start > now;
+  if (start <= now) return false;
+  if (createdAt && now - new Date(createdAt).getTime() < UNDO_MINUTES * 60_000) return true;
+  return start - now >= Math.max(0, cutoffMinutes) * 60_000;
 }
 
 // The moment after which a booking can no longer be cancelled.

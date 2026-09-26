@@ -8,15 +8,16 @@ import { requireResident } from '../../../../lib/auth/access';
 import { getT } from '../../../../lib/i18n';
 import { loadAmenities, loadNeighbours, residentContext, type FacilityRow } from '../../../../lib/booking/engine';
 import { isAmenityKind, isSpaceKind, limitIsPerKind, MAX_REPEAT_WEEKS } from '../../../../lib/booking/kinds';
-import { cancelDeadline, canCancel, hoursInWeek, lengthOptions, overlaps, startHours, turnHours } from '../../../../lib/booking/rules';
+import { cancelDeadline, canCancel, UNDO_MINUTES, hoursInWeek, lengthOptions, overlaps, startHours, turnHours } from '../../../../lib/booking/rules';
 import { addDays, at, dayStart, formatDay, hh, nowMs, parseDay, weekStart } from '../../../../lib/booking/time';
 import { fmtWhen } from '../../../../lib/booking/format';
-import { bookAction, cancelBookingAction, checkInAction, unwatchSlotAction, watchSlotAction } from '../../../../lib/booking/actions';
+import { boardBookAction, boardCancelAction, boardCheckInAction, boardWatchAction, bookAction, cancelBookingAction, checkInAction, unwatchSlotAction, watchSlotAction } from '../../../../lib/booking/actions';
 import { releaseMissed } from '../../../../lib/booking/release';
 import { checkInPhase, checkInWindow, isInUse } from '../../../../lib/booking/checkin';
 import type { MessageKey } from '../../../../lib/i18n/messages';
+import Flash from '../../../../components/Flash';
 
-const ERRORS = ['invalid', 'past', 'tooFar', 'closed', 'tooLong', 'taken', 'weekly', 'capacity', 'outsider', 'notAvailable', 'notFound', 'tooLate', 'checkinEarly', 'checkinLate'];
+const ERRORS = ['invalid', 'past', 'tooFar', 'closed', 'tooLong', 'taken', 'mine', 'weekly', 'capacity', 'outsider', 'notAvailable', 'notFound', 'tooLate', 'checkinEarly', 'checkinLate', 'outOfOrder'];
 
 // ISO 8601 week number, from local date parts.
 function isoWeek(date: Date): number {
@@ -120,7 +121,11 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
         endLabel: hh(h + slotLen),
         state,
         bookingId: state === 'mine' ? booking!.id : undefined,
-        cancellable: state === 'mine' ? canCancel(booking!.startsAt, facility.cancelCutoffMinutes, now) : undefined,
+        cancellable: state === 'mine' ? canCancel(booking!.startsAt, facility.cancelCutoffMinutes, now, booking!.createdAt) : undefined,
+        undoLabel:
+          state === 'mine' && !canCancel(booking!.startsAt, facility.cancelCutoffMinutes, now) && canCancel(booking!.startsAt, facility.cancelCutoffMinutes, now, booking!.createdAt)
+            ? clock(new Date(new Date(booking!.createdAt).getTime() + UNDO_MINUTES * 60_000))
+            : undefined,
         deadlineLabel:
           state === 'mine' ? cancelDeadline(booking!.startsAt, facility.cancelCutoffMinutes).toLocaleString(tag, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : undefined,
         lengths: lengths.length ? lengths : [slotLen],
@@ -223,8 +228,8 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
           <Link href={`/book/report?facility=${facility.id}`}>{t('nav.report')}</Link>
         </div>
       )}
-      {error && <p className={app.alert}>{t(`book.error.${error}` as MessageKey)}</p>}
-      {one('skipped') && <p className={app.alert}>{t('book.skipped', { n: one('skipped') })}</p>}
+      {error && <Flash className={app.alert} tone="err">{t(`book.error.${error}` as MessageKey)}</Flash>}
+      {one('skipped') && <Flash className={app.alert} tone="err">{t('book.skipped', { n: one('skipped') })}</Flash>}
 
       <div className={styles.toolbar}>
         <div className={styles.weekNav}>
@@ -319,24 +324,39 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
           unwatch: t('checkin.unwatch'),
           opensAt: t('checkin.opensAt', { time: '{time}' }),
           openUntil: t('checkin.openUntil', { time: '{time}' }),
+          live: t('board.live'),
+          refresh: t('board.refresh'),
+          updated: t('board.updatedAt', { time: '{time}' }),
+          holdTip: t('board.holdTip'),
+          bookedToast: t('board.bookedToast', { time: '{time}' }),
+          cancelledToast: t('board.cancelled'),
+          checkedInToast: t('checkin.done'),
+          watchingToast: t('checkin.watching'),
+          swipeTip: t('board.swipeTip'),
+          errors: Object.fromEntries(ERRORS.map((e) => [e, t(`book.error.${e}` as MessageKey)])),
           hoursN: t('book.hours', { n: '{n}' }),
           after: t('board.after', { n: '{n}', max: '{max}' }),
           cancelUntil: t('board.cancelUntil', { time: '{time}' }),
           cancelClosed: t('board.cancelClosed', { time: '{time}' }),
+          undoUntil: t('board.undoUntil', { time: '{time}' }),
+          cancelConfirm: t('board.cancelConfirm'),
+          cancelYes: t('board.cancelYes'),
+          cancelKeep: t('board.cancelKeep'),
         }}
         bookAction={bookAction}
         cancelAction={cancelBookingAction}
         checkInAction={checkInAction}
         watchAction={watchSlotAction}
         unwatchAction={unwatchSlotAction}
+        live={{ book: boardBookAction, cancel: boardCancelAction, checkIn: boardCheckInAction, watch: boardWatchAction }}
       />
       {flash && (
-        <div className={styles.toast} role="status">
+        <Flash className={styles.toast}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12" />
           </svg>
           {flash}
-        </div>
+        </Flash>
       )}
     </AppShell>
   );

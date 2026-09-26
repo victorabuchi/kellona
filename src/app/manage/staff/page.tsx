@@ -7,6 +7,7 @@ import { requireManager } from '../../../lib/auth/access';
 import { getT } from '../../../lib/i18n';
 import type { T } from '../../../lib/i18n';
 import { addStaffAction, removeStaffAction, updateStaffAction } from '../../../lib/manage/staff-actions';
+import Flash from '../../../components/Flash';
 
 export const metadata: Metadata = { title: 'Staff' };
 
@@ -59,8 +60,8 @@ export default async function StaffPage({ searchParams }: PageProps<'/manage/sta
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/manage/staff" title={t('staff.title')}>
       <p className={styles.lede}>{t('staff.lede')}</p>
-      {sp['saved'] && <p className={styles.ok}>{t('staff.saved')}</p>}
-      {sp['error'] && <p className={styles.alert}>{t('staff.error')}</p>}
+      {sp['saved'] && <Flash className={styles.ok}>{t('staff.saved')}</Flash>}
+      {sp['error'] && <Flash className={styles.alert} tone="err">{t('staff.error')}</Flash>}
 
       <div className={shell.toolbar}>
         <span className={shell.blockMeta}>{t('staff.count', { n: staff.length })}</span>

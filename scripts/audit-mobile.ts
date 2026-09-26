@@ -6,7 +6,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { db } from '../src/prisma/db';
 import { orgScope } from '../src/lib/tenant/scope';
-import { Browser } from './lib/chrome';
+import { Browser } from './lib/browser';
 import { actionIn, http } from './lib/http';
 
 const WIDTHS = [390, 360];
@@ -77,14 +77,12 @@ routes.push({ path: `/book/f/${byKind('common_room').id}?day=${d}&pick=${encodeU
 const browser = await Browser.launch();
 let failures = 0;
 try {
-  await browser.send('Network.enable');
   for (const route of routes) {
     const host = route.host ?? HOST;
-    await browser.send('Network.clearBrowserCookies');
+    await browser.clearCookies();
     if (route.cookie) {
-      const [name, value] = route.cookie.split('=');
-      await browser.send('Network.setCookie', { name, value: route.cookie.slice(name!.length + 1), domain: host, path: '/', httpOnly: true });
-      void value;
+      const name = route.cookie.split('=')[0]!;
+      await browser.setCookie({ name, value: route.cookie.slice(name.length + 1), domain: host, httpOnly: true });
     }
     for (const width of WIDTHS) {
       await browser.viewport(width, 800);

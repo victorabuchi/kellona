@@ -5,6 +5,7 @@ import { requireStaff } from '../../../lib/auth/access';
 import { getT } from '../../../lib/i18n';
 import { addResidentAction, importCsvAction, removeResidentAction } from '../../../lib/manage/actions';
 import { actAsResidentAction } from '../../../lib/auth/acting-actions';
+import Flash from '../../../components/Flash';
 
 export const metadata: Metadata = { title: 'Residents' };
 
@@ -29,8 +30,8 @@ export default async function ResidentsPage({ searchParams }: PageProps<'/manage
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/manage/residents" title={t('residents.title')}>
       <p className={styles.lede}>{t('residents.lede')}</p>
-      {one('ok') && <p className={styles.ok}>{t('residents.saved')}</p>}
-      {one('error') && <p className={styles.alert}>{t('residents.error')}</p>}
+      {one('ok') && <Flash className={styles.ok}>{t('residents.saved')}</Flash>}
+      {one('error') && <Flash className={styles.alert} tone="err">{t('residents.error')}</Flash>}
       {imported.length === 3 && (
         <p className={styles.ok}>{t('residents.imported', { created: imported[0]!, updated: imported[1]!, skipped: imported[2]! })}</p>
       )}

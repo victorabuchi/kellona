@@ -14,6 +14,7 @@ import DomainManager from '../../../../components/DomainManager';
 import { cnameTarget } from '../../../../lib/tenant/dns';
 import { hostingAutomated } from '../../../../lib/tenant/hosting';
 import { fmtWhen } from '../../../../lib/booking/format';
+import Flash from '../../../../components/Flash';
 
 export default async function OrgSettingsPage({ params, searchParams }: PageProps<'/platform/o/[orgId]'>) {
   const { orgId } = await params;
@@ -39,8 +40,8 @@ export default async function OrgSettingsPage({ params, searchParams }: PageProp
       <Link href="/platform" className={styles.muted}>
         {t('platform.title')}
       </Link>
-      {sp['saved'] && <p className={styles.ok}>{t('brand.saved')}</p>}
-      {sp['error'] === 'file' && <p className={styles.alert}>{t('brand.error')}</p>}
+      {sp['saved'] && <Flash className={styles.ok}>{t('brand.saved')}</Flash>}
+      {sp['error'] === 'file' && <Flash className={styles.alert} tone="err">{t('brand.error')}</Flash>}
       <p>
         <a className={styles.btn} href={`/platform/open/${org.id}`}>
           {t('platform.open')}

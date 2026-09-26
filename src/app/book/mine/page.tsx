@@ -6,13 +6,16 @@ import shell from '../../../components/shell.module.css';
 import { requireResident } from '../../../lib/auth/access';
 import { getT } from '../../../lib/i18n';
 import { fmtWhen } from '../../../lib/booking/format';
-import { hoursInWeek } from '../../../lib/booking/rules';
+import { canCancel, hoursInWeek } from '../../../lib/booking/rules';
+import { cancelBookingAction } from '../../../lib/booking/actions';
+import ConfirmCancel from '../../../components/ConfirmCancel';
+import Flash from '../../../components/Flash';
 import { nowMs } from '../../../lib/booking/time';
 
 export const metadata: Metadata = { title: 'My bookings' };
 
 // Everything the resident booked: upcoming, recent history with check-ins and no-shows.
-export default async function MyBookingsPage() {
+export default async function MyBookingsPage({ searchParams }: PageProps<'/book/mine'>) {
   const { org, scope, viewer } = await requireResident();
   const { t, locale } = await getT(org);
   const now = nowMs();
@@ -25,6 +28,8 @@ export default async function MyBookingsPage() {
     scope.parkingClaims.q().where({ residentId: viewer.id }).include('facility', (f) => f).first(),
   ]);
   const when = (iso: string) => fmtWhen(iso, locale, org.timezone);
+  const tooLate = (await searchParams)['error'] === 'tooLate';
+  const cancelLabels = { cancel: t('book.cancel'), confirm: t('board.cancelConfirm'), yes: t('board.cancelYes'), keep: t('board.cancelKeep') };
   const busy = [...upcoming, ...past].map((b) => ({ start: new Date(b.startsAt).getTime(), end: new Date(b.endsAt).getTime(), residentId: b.residentId }));
   const weekHours = hoursInWeek(busy, viewer.id, new Date(now));
   const history = [
@@ -35,6 +40,11 @@ export default async function MyBookingsPage() {
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/book/mine" title={t('mine.title')}>
       <p className={styles.lede}>{t('mine.lede')}</p>
+      {tooLate && (
+        <Flash className={styles.alert} tone="err">
+          {t('book.error.tooLate')}
+        </Flash>
+      )}
       <div className={shell.stats}>
         {[
           [t('mine.statUpcoming'), upcoming.length],
@@ -83,6 +93,9 @@ export default async function MyBookingsPage() {
                   <Link className={styles.btn} href={`/book/f/${b.facilityId}`}>
                     {t('mine.open')}
                   </Link>
+                  {canCancel(b.startsAt, b.facility!.cancelCutoffMinutes, now, b.createdAt) && (
+                    <ConfirmCancel action={cancelBookingAction} bookingId={b.id} returnTo="/book/mine" labels={cancelLabels} />
+                  )}
                 </span>
               </li>
             ))}

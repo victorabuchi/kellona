@@ -136,6 +136,17 @@ export async function createBookings(args: {
     .where((b) => b.endsAt.gte(nowIso))
     .all();
   const onFacility: Busy[] = rows.filter((r) => r.facilityId === facility.id).map(toBusy);
+  // The resident's own bookings of this kind anywhere: nobody does two loads of
+  // laundry (or two saunas) at the same time.
+  const sameKindIds = (await scope.facilities.q().where({ kind: facility.kind }).all()).map((f) => f.id);
+  const own: Busy[] = (
+    await scope.bookings
+      .q()
+      .where({ residentId: ctx.residentId })
+      .where((b) => b.facilityId.in(sameKindIds))
+      .where((b) => b.endsAt.gte(nowIso))
+      .all()
+  ).map(toBusy);
   const forLimit: Busy[] = rows.map(toBusy);
 
   const seriesId = repeatWeeks > 1 ? randomUUID() : null;
@@ -146,6 +157,7 @@ export async function createBookings(args: {
     const e = new Date(s);
     e.setHours(e.getHours() + hours);
     let problem: RuleError | null = index === 0 ? null : checkSlot(facility, s, hours, now, true);
+    if (!problem && own.some((b) => overlaps(s.getTime(), e.getTime(), b.start, b.end))) problem = 'mine';
     if (!problem && onFacility.some((b) => overlaps(s.getTime(), e.getTime(), b.start, b.end))) problem = 'taken';
     if (!problem && hoursInWeek(forLimit, ctx.residentId, s) + hours > facility.maxHoursPerWeek) problem = 'weekly';
     if (problem) {
@@ -166,6 +178,7 @@ export async function createBookings(args: {
       const busy = { start: s.getTime(), end: e.getTime(), residentId: ctx.residentId };
       onFacility.push(busy);
       forLimit.push(busy);
+      own.push(busy);
       for (const residentId of participantIds) await scope.participants.create({ bookingId: row.id, residentId, status: 'invited' });
     } catch {
       // Unique (facility, start) lost a race with another booker.

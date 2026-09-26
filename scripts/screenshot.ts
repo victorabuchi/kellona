@@ -1,6 +1,6 @@
 // Usage: tsx scripts/screenshot.ts <url> <out.png> [width=390] [dark|light] [scrollY=0] [waitMs=0]
 import { writeFileSync } from 'node:fs';
-import { Browser } from './lib/chrome';
+import { Browser } from './lib/browser';
 
 const [url, out, width = '390', scheme, scroll = '0', wait = '0'] = process.argv.slice(2);
 if (!url || !out) {

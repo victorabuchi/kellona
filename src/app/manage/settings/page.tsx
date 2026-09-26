@@ -12,6 +12,7 @@ import { addOwnDomainAction, makeOwnPrimaryAction, removeOwnDomainAction, verify
 import { cnameTarget } from '../../../lib/tenant/dns';
 import { hostingAutomated } from '../../../lib/tenant/hosting';
 import { fmtWhen } from '../../../lib/booking/format';
+import Flash from '../../../components/Flash';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -39,8 +40,8 @@ export default async function SettingsPage({ searchParams }: PageProps<'/manage/
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/manage/settings" title={t('settings.title')}>
       <p className={styles.lede}>{t('settings.lede')}</p>
-      {sp['saved'] && <p className={styles.ok}>{t('settings.saved')}</p>}
-      {sp['error'] === 'file' && <p className={styles.alert}>{t('brand.error')}</p>}
+      {sp['saved'] && <Flash className={styles.ok}>{t('settings.saved')}</Flash>}
+      {sp['error'] === 'file' && <Flash className={styles.alert} tone="err">{t('brand.error')}</Flash>}
 
       <section className={styles.card}>
         <h2 className={styles.h2}>{t('brand.title')}</h2>
