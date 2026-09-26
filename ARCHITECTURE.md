@@ -27,7 +27,16 @@ Three tests hold this in place:
 
 **Known gap.** Foreign keys do not yet enforce that related rows share an organization (a booking in A pointing at a facility in B). Server actions always load the parent through the same scope first, which prevents this in practice. Composite foreign keys on `(organizationId, id)` would enforce it in the database and are planned together with RLS.
 
-**Platform level data.** `Organization` itself is not scoped. Super-admins are listed in `SUPERADMIN_EMAILS` rather than stored per organization.
+**Platform level data.** `Organization`, `PlatformAdmin` (Kellona super-admins) and `LoginToken` (whose organization is empty for super-admins) are not organization owned and sit outside `orgScope`.
+
+## Sign-in
+
+- **Methods today:** password (for `AuthIdentity` rows with provider `password`, and super-admins) and a one-time email link valid for 15 minutes. Google and an organization's own OIDC or SAML are added as further `AuthIdentity` providers without schema changes.
+- **Session:** an HMAC signed, HttpOnly, host-only cookie holding `{kind, orgId, id, exp}` (`src/lib/auth/token.ts`). A host-only cookie is never sent to another organization's address, and `getViewer()` also rejects a resident or staff session whose `orgId` is not the current host's organization. Super-admin sessions work on every host.
+- **Email links** store only a SHA-256 hash of the token, work once, and only on the organization's own address. Opening the link shows a button rather than signing in on GET, so mail scanners cannot use it up. Requesting a link answers the same way whether or not the address is known. Without `RESEND_API_KEY` in development the link is shown on the page.
+- **Passwords** use scrypt from `node:crypto`. Unknown emails cost the same time as wrong passwords. Failed attempts are limited per email in memory (8 per 15 minutes), which must move to the database before running more than one instance.
+- **Super-admins** are created with `npm run admin:create` (password read from the environment).
+- `scripts/e2e-auth.ts` checks all of this over HTTP against the dev server with scratch data.
 
 ## Branding model
 

@@ -37,6 +37,8 @@ Open:
 | `npm test` | Unit tests and database tests (tenant isolation). Scratch data is deleted afterwards. |
 | `npm run typecheck`, `npm run lint` | Static checks |
 | `npm run setup` | Emit contract, apply migrations, seed demo organizations. Safe to rerun. |
+| `ADMIN_EMAIL=... ADMIN_NAME=... ADMIN_PASSWORD='...' npm run admin:create` | Create or update a Kellona super-admin |
+| `E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD='...' npx tsx scripts/e2e-auth.ts` | Sign-in end to end checks against the running dev server |
 | `npm run screenshot -- <url> <out.png> [width] [dark]` | Viewport screenshot in headless Chrome |
 
 ## Schema changes
