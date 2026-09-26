@@ -76,3 +76,8 @@ export async function loadOrgByHost(host: string): Promise<OrgContext | null> {
   const row = await db.orm.public.Organization.where({ id: domain.organizationId }).include('brand', (b) => b).first();
   return row ? toContext(row) : null;
 }
+
+// Web addresses are unique across all organizations.
+export async function isHostTaken(host: string): Promise<boolean> {
+  return Boolean(await db.orm.public.OrgDomain.where({ host }).first());
+}

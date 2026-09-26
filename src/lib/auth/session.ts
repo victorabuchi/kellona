@@ -4,7 +4,7 @@ import { SESSION_COOKIE, SESSION_DAYS } from './constants';
 
 type NewSession =
   | { kind: 'admin'; adminId: string }
-  | { kind: 'resident'; orgId: string; residentId: string }
+  | { kind: 'resident'; orgId: string; residentId: string; by?: string }
   | { kind: 'staff'; orgId: string; staffId: string };
 
 function secret(): string {

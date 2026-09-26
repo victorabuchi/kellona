@@ -4,7 +4,8 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 
 export type SessionPayload =
   | { kind: 'admin'; adminId: string; exp: number }
-  | { kind: 'resident'; orgId: string; residentId: string; exp: number }
+  // `by` is set when a super-admin views the app as this resident.
+  | { kind: 'resident'; orgId: string; residentId: string; exp: number; by?: string }
   | { kind: 'staff'; orgId: string; staffId: string; exp: number };
 
 function sign(data: string, secret: string): string {
@@ -27,7 +28,10 @@ export function decodeSession(value: string | undefined, secret: string, nowMs: 
     const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8')) as SessionPayload;
     if (typeof payload.exp !== 'number' || payload.exp < nowMs) return null;
     if (payload.kind === 'admin' && typeof payload.adminId === 'string') return payload;
-    if (payload.kind === 'resident' && typeof payload.orgId === 'string' && typeof payload.residentId === 'string') return payload;
+    if (payload.kind === 'resident' && typeof payload.orgId === 'string' && typeof payload.residentId === 'string') {
+      if (payload.by !== undefined && typeof payload.by !== 'string') return null;
+      return payload;
+    }
     if (payload.kind === 'staff' && typeof payload.orgId === 'string' && typeof payload.staffId === 'string') return payload;
     return null;
   } catch {

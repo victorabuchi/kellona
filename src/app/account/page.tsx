@@ -1,10 +1,14 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import AuthShell from '../../components/AuthShell';
-import styles from '../../components/auth.module.css';
+import Frame from '../../components/Frame';
+import styles from '../../components/app.module.css';
 import { getCurrentOrg } from '../../lib/tenant/org';
 import { getT } from '../../lib/i18n';
 import { requireViewer } from '../../lib/auth/viewer';
 import { signOutAction } from '../../lib/auth/actions';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+
+export const metadata: Metadata = { title: 'Account' };
 
 export default async function AccountPage() {
   const viewer = await requireViewer();
@@ -20,33 +24,31 @@ export default async function AccountPage() {
           : t('account.role.staff');
 
   return (
-    <AuthShell org={org} t={t} locale={locale} back="/account" wide>
-      <h1 className={styles.titleDoc}>{t('account.title')}</h1>
-      <dl className={styles.dl}>
-        <dd>
-          <strong>{viewer.name}</strong>
-        </dd>
-        <dd>{viewer.email}</dd>
-        <dt>{t('account.role')}</dt>
-        <dd>{role}</dd>
-        {org && (
-          <>
-            <dt>{t('account.organization')}</dt>
-            <dd>{org.name}</dd>
-          </>
+    <Frame org={org} viewer={viewer} t={t} locale={locale} active="/account" title={t('account.title')}>
+      <div className={styles.card}>
+        <span className={styles.rowTitle}>{viewer.name}</span>
+        <span className={styles.muted}>{viewer.email}</span>
+        <span className={styles.muted}>
+          {t('account.role')}: {role}
+          {org ? ` · ${org.name}` : ''}
+        </span>
+      </div>
+      <LanguageSwitcher locales={org?.locales ?? ['fi', 'en']} current={locale} back="/account" label={t('common.language')} />
+      <div className={styles.actions}>
+        {viewer.kind === 'admin' && (
+          <Link className={styles.btn} href="/platform">
+            {t('account.platform')}
+          </Link>
         )}
-      </dl>
-      <p className={styles.lede}>{t('account.next')}</p>
-      {viewer.kind === 'admin' && (
-        <Link className={styles.button} href="/platform">
-          {t('account.platform')}
+        <Link className={styles.btnGhost} href="/privacy">
+          {t('common.privacy')}
         </Link>
-      )}
-      <form action={signOutAction}>
-        <button className={styles.buttonGhost} type="submit">
-          {t('account.signOut')}
-        </button>
-      </form>
-    </AuthShell>
+        <form action={signOutAction}>
+          <button className={styles.btnDanger} type="submit">
+            {t('account.signOut')}
+          </button>
+        </form>
+      </div>
+    </Frame>
   );
 }

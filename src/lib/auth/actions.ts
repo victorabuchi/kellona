@@ -12,6 +12,7 @@ import { hashLoginToken, newLoginToken } from './token';
 import { clearFailures, isThrottled, recordFailure } from './throttle';
 import { requestOrigin } from './origin';
 import { LOGIN_LINK_MINUTES } from './constants';
+import { homeFor } from './home';
 
 function readEmail(formData: FormData): string {
   return String(formData.get('email') ?? '').trim().toLowerCase().slice(0, 254);
@@ -33,7 +34,7 @@ export async function passwordSignInAction(formData: FormData) {
     clearFailures(email);
     await db.orm.public.PlatformAdmin.where({ id: admin.id }).update({ lastSignInAt: now });
     await createSession({ kind: 'admin', adminId: admin.id });
-    redirect('/account');
+    redirect(homeFor('admin', Boolean(await getCurrentOrg())));
   }
 
   const org = await getCurrentOrg();
@@ -45,7 +46,7 @@ export async function passwordSignInAction(formData: FormData) {
     if (identity.residentId) await createSession({ kind: 'resident', orgId: org.id, residentId: identity.residentId });
     else if (identity.staffId) await createSession({ kind: 'staff', orgId: org.id, staffId: identity.staffId });
     else back({ error: 'invalid', email });
-    redirect('/account');
+    redirect(homeFor(identity.residentId ? 'resident' : 'staff', true));
   }
 
   recordFailure(email);
@@ -108,7 +109,7 @@ export async function consumeLinkAction(formData: FormData) {
     if (!admin) back({ error: 'link' });
     await db.orm.public.PlatformAdmin.where({ id: admin.id }).update({ lastSignInAt: new Date().toISOString() });
     await createSession({ kind: 'admin', adminId: admin.id });
-    redirect('/account');
+    redirect(homeFor('admin', Boolean(await getCurrentOrg())));
   }
 
   // A link only works on the address of the organization it was made for.
@@ -118,12 +119,12 @@ export async function consumeLinkAction(formData: FormData) {
   const resident = await scope.residents.q().where({ email: row.email, status: 'active' }).first();
   if (resident) {
     await createSession({ kind: 'resident', orgId: org.id, residentId: resident.id });
-    redirect('/account');
+    redirect('/book');
   }
   const staff = await scope.staff.q().where({ email: row.email }).first();
   if (!staff) back({ error: 'link' });
   await createSession({ kind: 'staff', orgId: org.id, staffId: staff.id });
-  redirect('/account');
+  redirect('/manage');
 }
 
 export async function signOutAction() {

@@ -7,7 +7,7 @@ import { readSession } from './session';
 
 export type Viewer =
   | { kind: 'admin'; id: string; name: string; email: string }
-  | { kind: 'resident'; id: string; orgId: string; name: string; email: string; unitId: string | null }
+  | { kind: 'resident'; id: string; orgId: string; name: string; email: string; unitId: string | null; actingAdminId: string | null }
   | { kind: 'staff'; id: string; orgId: string; name: string; email: string; role: string };
 
 // Who is signed in on this address. Resident and staff sessions are only valid
@@ -27,7 +27,9 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   if (session.kind === 'resident') {
     const r = await scope.residents.q().where({ id: session.residentId }).first();
     if (!r || r.status !== 'active') return null;
-    return { kind: 'resident', id: r.id, orgId: org.id, name: r.name, email: r.email, unitId: r.unitId };
+    // A super-admin viewing as a resident must still exist.
+    if (session.by && !(await db.orm.public.PlatformAdmin.where({ id: session.by }).first())) return null;
+    return { kind: 'resident', id: r.id, orgId: org.id, name: r.name, email: r.email, unitId: r.unitId, actingAdminId: session.by ?? null };
   }
   const s = await scope.staff.q().where({ id: session.staffId }).first();
   return s ? { kind: 'staff', id: s.id, orgId: org.id, name: s.name, email: s.email, role: s.role } : null;

@@ -6,6 +6,7 @@ import { getT } from '../lib/i18n';
 import { getViewer } from '../lib/auth/viewer';
 import { passwordSignInAction, requestLinkAction } from '../lib/auth/actions';
 import { LOGIN_LINK_MINUTES } from '../lib/auth/constants';
+import { homeFor } from '../lib/auth/home';
 
 const ERRORS = ['missing', 'invalid', 'throttled', 'link', 'email'] as const;
 
@@ -14,7 +15,8 @@ export default async function SignInPage({ searchParams }: PageProps<'/'>) {
   const one = (k: string) => (typeof params[k] === 'string' ? (params[k] as string) : '');
   const org = await getCurrentOrg();
   const { t, locale } = await getT(org);
-  if (await getViewer()) redirect('/account');
+  const viewer = await getViewer();
+  if (viewer) redirect(homeFor(viewer.kind, Boolean(org)));
 
   const error = ERRORS.find((e) => e === one('error'));
   const dev = process.env.NODE_ENV !== 'production' ? one('dev') : '';
