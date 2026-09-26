@@ -56,8 +56,9 @@ const routes: Array<{ path: string; cookie: string | null; host?: string }> = [
   { path: '/manage', cookie: admin },
   { path: `/manage/b/${building.id}`, cookie: admin },
   { path: '/manage/residents?imported=1,2,3&errors=4%3A%20invalid%20email', cookie: admin },
-  { path: '/platform', cookie: admin },
-  { path: `/platform/o/${org.id}`, cookie: admin },
+  { path: '/manage/staff', cookie: admin },
+  { path: '/manage/settings', cookie: admin },
+  { path: `/platform/o/${org.id}`, cookie: login.cookie!, host: 'localhost' },
   { path: '/account', cookie: admin },
 ];
 

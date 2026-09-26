@@ -87,7 +87,7 @@ try {
     const account = await http('GET', 'demo-north.localhost', '/account', { cookie: res.cookie! });
     check('admin account page shows super-admin role', account.status === 200 && (account.body.includes('super-admin') || account.body.includes('pääkäyttäjä')));
     const platform = await http('GET', 'demo-north.localhost', '/platform', { cookie: res.cookie! });
-    check('admin sees organization list', platform.status === 200 && platform.body.includes('demo-lakeside'));
+    check('organization list opened on an organization address moves to Kellona', platform.status === 307 && platform.location.startsWith('/platform/home'), `${platform.status} ${platform.location}`);
     const elsewhere = await http('GET', 'demo-lakeside.localhost', '/account', { cookie: res.cookie! });
     check('admin session also valid on another organization host', elsewhere.status === 200);
   } else {

@@ -61,7 +61,7 @@ try {
   const reuse = await http('GET', host, handoffUrl.pathname + handoffUrl.search);
   check('handoff token works once', reuse.location.includes('error=link'), reuse.location);
 
-  for (const path of ['/manage/overview', '/manage', `/manage/b/${bA.id}`, '/manage/residents', '/account', `/platform/o/${org.id}`]) {
+  for (const path of ['/manage/overview', '/manage', `/manage/b/${bA.id}`, '/manage/residents', '/manage/staff', '/manage/settings', '/account']) {
     const r = await http('GET', host, path, { cookie: admin });
     check(`staff page ${path} loads`, r.status === 200 && !r.body.includes('Application error'), String(r.status));
   }
@@ -181,6 +181,40 @@ try {
   const importedBuilding = await s.buildings.q().where({ name: 'C' }).first();
   check('CSV import created the building', Boolean(importedBuilding));
 
+  // Staff page and organization settings.
+  const staffPage = await http('GET', host, '/manage/staff', { cookie: admin });
+  check('staff page loads', staffPage.status === 200);
+  const staffEmail = `staff-${tag}@example.test`;
+  const added = await http('POST', host, '/manage/staff', { cookie: admin, form: { [actionIn(staffPage.body, 'name="email"')]: '', name: 'Scratch Staff', email: staffEmail, role: 'staff', buildings: [bB.id] } });
+  const staffRow = await s.staff.q().where({ email: staffEmail }).first();
+  const staffLinks = staffRow ? await s.staffBuildings.q().where({ staffId: staffRow.id }).all() : [];
+  check('manager adds a staff member limited to one building', added.location.includes('saved=1') && staffRow?.role === 'staff' && staffLinks.length === 1 && staffLinks[0]!.buildingId === bB.id, added.location);
+  const signPage = await http('GET', host, '/');
+  const linkAction = /formNoValidate="" name="(\$ACTION_ID_[0-9a-f]+)"/.exec(signPage.body)?.[1] ?? '';
+  const asked = await http('POST', host, '/', { form: { [linkAction]: '', email: staffEmail } });
+  const staffToken = new URL(param(asked.location, 'dev') ?? 'http://x/').searchParams.get('token') ?? '';
+  const verifyPage = await http('GET', host, `/auth/verify?token=${staffToken}`);
+  const staffLogin = await http('POST', host, '/auth/verify', { form: { [actionIn(verifyPage.body, 'name="token"')]: '', token: staffToken } });
+  const staffCookie = staffLogin.cookie ?? '';
+  check('staff member signs in by email link and lands on the overview', staffLogin.location.endsWith('/manage/overview') && Boolean(staffCookie), staffLogin.location);
+  const staffBuildingsPage = await http('GET', host, '/manage', { cookie: staffCookie });
+  check('staff see only their own building', staffBuildingsPage.body.includes(`/manage/b/${bB.id}`) && !staffBuildingsPage.body.includes(`/manage/b/${bA.id}`));
+  const noStaffPage = await http('GET', host, '/manage/staff', { cookie: staffCookie });
+  const noSettings = await http('GET', host, '/manage/settings', { cookie: staffCookie });
+  check('staff cannot open staff or settings pages', noStaffPage.status === 307 && noSettings.status === 307);
+  const settingsPage = await http('GET', host, '/manage/settings', { cookie: admin });
+  await http('POST', host, '/manage/settings', { cookie: admin, form: { [actionIn(settingsPage.body, 'name="supportEmail"')]: '', supportEmail: `help-${tag}@example.test`, name: 'Scratch Booking', shortName: 'Scratch', locales: ['fi', 'en'], defaultLocale: 'en' } });
+  const saved = await db.orm.public.Organization.where({ id: org.id }).first();
+  check('organization settings save', saved?.supportEmail === `help-${tag}@example.test`);
+
+  // Back to Kellona: the platform pages move to Kellona's own address with the session.
+  const platformHere = await http('GET', host, '/platform', { cookie: admin });
+  check('platform page on an organization address moves to Kellona', platformHere.status === 307 && platformHere.location.startsWith('/platform/home'), platformHere.location);
+  const home = await http('GET', host, '/platform/home', { cookie: admin });
+  const homeUrl = new URL(home.location);
+  const landed = await http('GET', 'localhost', homeUrl.pathname + homeUrl.search);
+  check('the way back signs the admin in on Kellona and opens the organizations list', homeUrl.hostname === 'localhost' && landed.location.endsWith('/platform') && Boolean(landed.cookie), `${home.location} -> ${landed.location}`);
+
   // Cross organization: a resident session does not work on another organization.
   const cross = await http('GET', 'demo-north.localhost', '/book', { cookie: c1 });
   check('resident session rejected on another organization', cross.status === 307, String(cross.status));
@@ -204,7 +238,11 @@ try {
   check('stop viewing as returns to admin', stop.location.endsWith('/manage/residents') && Boolean(stop.cookie), stop.location);
 } finally {
   await db.orm.public.Organization.where({ id: org.id }).delete();
-  for (const row of await db.orm.public.LoginToken.where({ email: adminEmail }).where((t) => t.createdAt.gte(started)).all()) {
+  const tokens = [
+    ...(await db.orm.public.LoginToken.where({ email: adminEmail }).where((t) => t.createdAt.gte(started)).all()),
+    ...(await db.orm.public.LoginToken.where((t) => t.email.like(`%-${tag}@example.test`)).all()),
+  ];
+  for (const row of tokens) {
     await db.orm.public.LoginToken.where({ id: row.id }).delete();
   }
   check('scratch data deleted', !(await db.orm.public.Organization.where({ slug }).first()));

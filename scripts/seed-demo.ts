@@ -120,6 +120,15 @@ async function seedBuilding(scope: OrgScope, d: Demo) {
   }
   await seedBookings(scope, building.id);
 
+  // A demo manager and a demo staff member limited to the demo house.
+  const staffDomain = `${d.slug}.example.test`;
+  for (const [staffName, local, role] of [['Maria Demo', 'maria', 'manager'], ['Jonas Demo', 'jonas', 'staff']] as const) {
+    const email = `${local}@${staffDomain}`;
+    if (await scope.staff.q().where({ email }).first()) continue;
+    const member = await scope.staff.create({ name: staffName, email, role });
+    if (role === 'staff') await scope.staffBuildings.create({ staffId: member.id, buildingId: building.id });
+  }
+
   // Apartment B 3 has no sauna, to show an apartment exception.
   const b3 = units[5]!;
   if (!(await scope.unitAmenities.q().where({ unitId: b3.id, kind: 'sauna' }).first())) await scope.unitAmenities.create({ unitId: b3.id, kind: 'sauna', enabled: false });
