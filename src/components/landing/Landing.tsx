@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import styles from './landing.module.css';
-import Showcase, { type ShowcaseLabels } from './Showcase';
+import ProductFilm from './film/ProductFilm';
+import { FILM_KEYS, type FilmLabels } from './film-keys';
 import RoleCards from './RoleCards';
 import HowItWorks from './HowItWorks';
 import LandingNav from './LandingNav';
@@ -78,37 +79,7 @@ function Langs({ locale, back }: { locale: Locale; back: string }) {
 
 export default function Landing({ t, locale, signedIn, contactEmail }: { t: T; locale: Locale; signedIn: boolean; contactEmail: string | null }) {
   const k = (key: string) => t(key as MessageKey);
-  const labels: ShowcaseLabels = {
-    tabs: { resident: k('landing.tab.resident'), group: k('landing.tab.group'), staff: k('landing.tab.staff'), brand: k('landing.tab.brand') },
-    titles: {
-      resident: [k('landing.show.resident.title'), k('landing.show.resident.desc')],
-      group: [k('landing.show.group.title'), k('landing.show.group.desc')],
-      staff: [k('landing.show.staff.title'), k('landing.show.staff.desc')],
-      brand: [k('landing.show.brand.title'), k('landing.show.brand.desc')],
-    },
-    kinds: { laundry: k('kind.laundry'), sauna: k('kind.sauna'), parking: k('kind.parking'), common_room: k('kind.common_room'), gym: k('kind.gym') },
-    play: k('landing.play'),
-    pause: k('landing.pause'),
-    today: k('landing.demo.today'),
-    book: k('landing.demo.book'),
-    confirm: k('landing.demo.confirm'),
-    booked: k('landing.demo.booked'),
-    invite: k('landing.demo.invite'),
-    invited: k('landing.demo.invited'),
-    accepted: k('landing.demo.accepted'),
-    accept: k('book.accept'),
-    decline: k('book.decline'),
-    saved: k('landing.demo.saved'),
-    save: k('manage.save'),
-    apartment: k('landing.demo.apartment'),
-    auto: k('manage.state.auto'),
-    yes: k('manage.state.yes'),
-    no: k('manage.state.no'),
-    amenities: k('manage.amenities'),
-    yourBrand: k('landing.demo.yourBrand'),
-    weekdays: locale === 'fi' ? ['ma', 'ti', 'ke', 'to', 'pe', 'la', 'su'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    invitedYou: `Aino: ${locale === 'fi' ? 'ke' : 'Wed'} 23 · 18:00-20:00`,
-  };
+  const film = Object.fromEntries(FILM_KEYS.map((key) => [key, k(key)])) as FilmLabels;
   const pair = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => ({ title: k(`${prefix}${i + 1}.t`), desc: k(`${prefix}${i + 1}.d`) }));
 
   return (
@@ -211,37 +182,33 @@ export default function Landing({ t, locale, signedIn, contactEmail }: { t: T; l
         }
       />
 
-      <header className={styles.hero}>
-        <div className={styles.blobA} aria-hidden="true" />
-        <div className={styles.blobB} aria-hidden="true" />
+      <header id="showcase" className={styles.hero}>
+        <div className={styles.aurora} aria-hidden="true" />
         <div className={`${styles.wrap} ${styles.heroInner}`}>
           <h1 className={styles.fadeUp}>
             {k('landing.hero1')} <span>{k('landing.hero2')}</span>
           </h1>
           <p className={`${styles.heroLede} ${styles.fadeUp} ${styles.d2}`}>{k('landing.lede')}</p>
           <div className={`${styles.heroCtas} ${styles.fadeUp} ${styles.d3}`}>
-            <Link href="/signup" className={`${styles.btnPrimary} ${styles.big}`}>
+            <Link href="/signup" className={`${styles.btnHero} ${styles.big}`}>
               {k('landing.ctaPrimary')}
             </Link>
-            <Link href="/login" className={`${styles.btnGhost} ${styles.big}`}>
+            <Link href="/login" className={`${styles.btnHeroGhost} ${styles.big}`}>
               {k('landing.ctaSecondary')}
             </Link>
           </div>
           <div className={styles.glowRow} aria-hidden="true">
             {GLOW.map(([kind, color]) => (
               <div key={kind} className={styles.glowTile} style={{ ['--glow' as string]: color }}>
-                <KindIcon kind={kind} size={28} />
+                <KindIcon kind={kind} size={24} />
               </div>
             ))}
           </div>
         </div>
-      </header>
-
-      <section id="showcase" className={styles.section}>
-        <div className={styles.wrap}>
-          <Showcase labels={labels} />
+        <div className={`${styles.wrap} ${styles.filmWrap} ${styles.fadeUp} ${styles.d3}`}>
+          <ProductFilm L={film} />
         </div>
-      </section>
+      </header>
 
       <section id="features" className={styles.sectionAlt}>
         <div className={styles.wrap}>
