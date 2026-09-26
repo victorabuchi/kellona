@@ -36,6 +36,19 @@ try {
   const inOrg = await b.eval<string>('location.href');
   check('Open lands on the organization overview', inOrg.includes(`${slug}.localhost`) && inOrg.endsWith('/manage/overview'), inOrg);
 
+  await b.eval(`document.querySelector('[aria-label=Help], [aria-label=Ohjeet]').click()`);
+  await wait(300);
+  const help = await b.eval<string>(`document.querySelector('[role=menu]')?.innerText ?? ''`);
+  check('the help menu opens with staff shortcuts', /Reports|Ilmoitukset/.test(help) && /⌘K/.test(help), help.slice(0, 80));
+  await b.eval(`document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))`);
+  await b.eval(`document.querySelector('[aria-label="Account menu"], [aria-label=Tilivalikko]').click()`);
+  await wait(300);
+  const profile = await b.eval<string>(`document.querySelector('[role=menu]')?.innerText ?? ''`);
+  check('the profile menu links account preferences and security', /Account preferences|Tilin asetukset/.test(profile) && /Security|Turvallisuus/.test(profile), profile.slice(0, 80));
+  await b.goto(`http://${slug}.localhost:3000/account`);
+  await wait(1200);
+  check('the account page has the settings side bar', await b.eval<boolean>(`Boolean(document.querySelector('a[href="#security"]')) && Boolean(document.querySelector('#danger'))`));
+
   await b.goto(`http://${slug}.localhost:3000/manage/booking`);
   await wait(1500);
   await b.eval(`document.querySelector('form button').click()`);

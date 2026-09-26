@@ -162,6 +162,11 @@ try {
   const out = await http('POST', scratchHost, '/account', { cookie: used.cookie ?? '', form: { [signOut!]: '' } });
   check('sign out clears the session cookie', out.status === 303 && out.location.endsWith('/'));
 
+  // Renaming yourself on the account page.
+  const acctPage = await http('GET', scratchHost, '/account', { cookie: signedIn.cookie ?? '' });
+  const rename = await http('POST', scratchHost, '/account', { cookie: signedIn.cookie ?? '', form: { [actionIn(acctPage.body, 'name="name"')]: '', name: 'Renamed Resident' } });
+  check('a resident can change their name', rename.location.includes('saved=1') && (await s.residents.q().where({ email: residentEmail }).first())?.name === 'Renamed Resident', rename.location);
+
   // Deleting your own account: the typed email must match, then the resident is gone.
   const own = await http('GET', scratchHost, '/account', { cookie: signedIn.cookie ?? '' });
   const del = actionIn(own.body, 'name="confirm"');

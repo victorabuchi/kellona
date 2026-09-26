@@ -102,7 +102,8 @@ try {
   await click(sameTime!);
   await wait(500);
   await b.eval(`[...document.querySelectorAll('dialog[open] button')].find(x => x.textContent.trim() === 'Reserve').click()`);
-  await wait(2500);
+  // Wait for the answer (the first request may compile the page).
+  for (let i = 0; i < 40 && !(await b.eval<string>('document.body.innerText')).includes('You have already booked this time'); i++) await wait(200);
   check('booking the same time twice says it is already booked', (await b.eval<string>('document.body.innerText')).includes('You have already booked this time'), targetStart);
   check('the message is not hidden behind the sheet', !(await b.eval<boolean>(`Boolean(document.querySelector('dialog[open]'))`)));
   if (shots) writeFileSync(`${shots}/board-mine.png`, await b.screenshot());

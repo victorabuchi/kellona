@@ -36,6 +36,9 @@ const ICONS = {
   alert: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
   help: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01',
   phone: 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z',
+  shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z',
+  mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM22 7l-10 6L2 7',
+  command: 'M18 3a3 3 0 0 0-3 3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 0 0 0-6Z',
   badge: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7ZM17 3l2 2 3-3',
 };
 type IconName = keyof typeof ICONS;
@@ -213,6 +216,22 @@ export default async function AppShell({
   const role =
     viewer.kind === 'admin' ? t('account.role.admin') : viewer.kind === 'resident' ? t('account.role.resident') : viewer.role === 'manager' ? t('account.role.manager') : t('account.role.staff');
 
+  const supportEmail = process.env['KELLONA_CONTACT_EMAIL'] ?? null;
+  const helpItems: Array<{ href: string; label: string; icon: IconName }> =
+    viewer.kind === 'resident'
+      ? [
+          { href: '/booking/help', label: t('nav.help'), icon: 'help' },
+          { href: '/booking/contact', label: t('nav.contact'), icon: 'phone' },
+          { href: '/booking/report', label: t('nav.report'), icon: 'alert' },
+        ]
+      : org
+        ? [
+            { href: '/manage/reports', label: t('nav.reports'), icon: 'inbox' },
+            { href: '/manage/settings#help', label: t('helpMenu.editHelp'), icon: 'list' },
+            { href: '/manage/residents', label: t('helpMenu.residents'), icon: 'people' },
+          ]
+        : [{ href: '/platform', label: t('nav.organizations'), icon: 'grid' }];
+
   const switcher = (
     <Dropdown
       label={t('nav.switch')}
@@ -305,20 +324,70 @@ export default async function AppShell({
               hint: t('search.hint'),
             }}
           />
-          <Dropdown label={t('nav.userMenu')} align="right" buttonClass={styles.avatar} button={<span aria-hidden="true">{initials(viewer.name) || '?'}</span>}>
+          <Dropdown label={t('helpMenu.label')} align="right" buttonClass={styles.iconBtn} popClass={styles.helpPop} button={<Icon name="help" size={18} />}>
             <div className={styles.popHead}>
-              <strong>{viewer.name}</strong>
-              <span>{viewer.email}</span>
-              <span>{role}</span>
+              <strong>{t('helpMenu.title')}</strong>
+              <span>{viewer.kind === 'resident' ? t('helpMenu.ledeResident') : t('helpMenu.ledeStaff')}</span>
             </div>
+            <div className={styles.popDivider} />
+            {helpItems.map((item) => (
+              <Link key={item.href} href={item.href} className={styles.popItem}>
+                <Icon name={item.icon} size={16} />
+                {item.label}
+              </Link>
+            ))}
+            <div className={styles.popDivider} />
+            <div className={styles.popHint}>
+              <Icon name="command" size={14} />
+              {t('helpMenu.search')}
+              <kbd>⌘K</kbd>
+            </div>
+            {viewer.kind !== 'resident' && supportEmail && (
+              <a href={`mailto:${supportEmail}`} className={styles.popItem}>
+                <Icon name="mail" size={16} />
+                {t('helpMenu.kellona')}
+              </a>
+            )}
+          </Dropdown>
+          <Dropdown label={t('nav.userMenu')} align="right" buttonClass={styles.avatar} popClass={styles.profilePop} button={<span aria-hidden="true">{initials(viewer.name) || '?'}</span>}>
+            <div className={styles.profileHead}>
+              <span className={styles.profileAvatar} aria-hidden="true">
+                {initials(viewer.name) || '?'}
+              </span>
+              <span className={styles.profileText}>
+                <strong>{viewer.name}</strong>
+                <span>{viewer.email}</span>
+              </span>
+            </div>
+            <span className={styles.profileRole}>
+              {role}
+              {org ? ` · ${org.shortName}` : ''}
+            </span>
+            <div className={styles.popDivider} />
+            <Link href="/account" className={styles.popItem}>
+              <Icon name="user" size={16} />
+              {t('profile.preferences')}
+            </Link>
+            <Link href="/account#security" className={styles.popItem}>
+              <Icon name="shield" size={16} />
+              {t('profile.security')}
+            </Link>
+            {viewer.kind === 'resident' && (
+              <Link href="/booking/mine" className={styles.popItem}>
+                <Icon name="list" size={16} />
+                {t('nav.myBookings')}
+              </Link>
+            )}
+            {viewer.kind === 'admin' && (
+              <a href={org ? '/platform/home' : '/platform'} className={styles.popItem}>
+                <Icon name="grid" size={16} />
+                {t('account.platform')}
+              </a>
+            )}
             <div className={styles.popDivider} />
             <div className={styles.popLabel}>{t('theme.label')}</div>
             <ThemeSwitcher initial={theme} labels={{ light: t('theme.light'), dark: t('theme.dark'), system: t('theme.system') }} />
             <div className={styles.popDivider} />
-            <Link href="/account" className={styles.popItem}>
-              <Icon name="user" size={16} />
-              {t('nav.account')}
-            </Link>
             <form action={signOutAction}>
               <button type="submit" className={`${styles.popItem} ${styles.danger}`}>
                 <Icon name="out" size={16} />

@@ -133,7 +133,12 @@ function AppFrame({
               <kbd>⌘K</kbd>
             </span>
           )}
-          <span className={styles.avatar}>{staff ? 'MK' : 'AK'}</span>
+          {staff ? (
+            <span className={styles.avatar}>MK</span>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.avatar} src="/landing/people/you.jpg" alt="" width={30} height={30} />
+          )}
         </span>
       </header>
       <div className={styles.body}>
@@ -535,6 +540,13 @@ const PEOPLE = [
   ['Leo', 'C 7'],
 ];
 const ACCEPT_AT = [6800, 7900, 9000];
+// Stock portraits of made-up residents (public/landing/people).
+const photo = (name: string) => `/landing/people/${name.toLowerCase()}.jpg`;
+
+function Face({ name, className }: { name: string; className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className={className ?? styles.face} src={photo(name)} alt="" width={24} height={24} />;
+}
 
 // 3. Invite: book the sauna and bring roommates; they accept one by one.
 function InviteScene({ t, L, phone, brand }: SceneProps) {
@@ -569,8 +581,9 @@ function InviteScene({ t, L, phone, brand }: SceneProps) {
                     </span>
                     {mine ? (
                       <span className={styles.faces}>
-                        {['A', ...PEOPLE.slice(0, 3).map((p) => p[0]![0])].map((c, i) => (
-                          <i key={i} style={{ opacity: i === 0 || t >= ACCEPT_AT[i - 1]! ? 1 : 0.35 }}>{c}</i>
+                        {['You', ...PEOPLE.slice(0, 3).map((p) => p[0]!)].map((n, i) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={n} src={photo(n)} alt="" style={{ opacity: i === 0 || t >= ACCEPT_AT[i - 1]! ? 1 : 0.35 }} />
                         ))}
                       </span>
                     ) : (
@@ -590,7 +603,7 @@ function InviteScene({ t, L, phone, brand }: SceneProps) {
                 const ok = t >= ACCEPT_AT[i]!;
                 return (
                   <motion.div key={name} className={styles.personRow} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 * i }}>
-                    <i className={styles.face}>{name![0]}</i>
+                    <Face name={name!} />
                     <span>
                       <b>{name}</b>
                       <small>{apt}</small>
@@ -619,7 +632,7 @@ function InviteScene({ t, L, phone, brand }: SceneProps) {
           {PEOPLE.map(([name, apt], i) => (
             <span key={name} className={styles.personRow} data-target={`p-${i}`} data-on={Boolean(picked[i])}>
               <i className={styles.box}>{picked[i] && <I d={P.check} size={11} stroke={3.5} />}</i>
-              <i className={styles.face}>{name![0]}</i>
+              <Face name={name!} />
               <span>
                 <b>{name}</b>
                 <small>{apt}</small>

@@ -97,6 +97,7 @@ export default async function SettingsPage({ searchParams }: PageProps<'/manage/
         </div>
       </form>
 
+      <div id="help" style={{ scrollMarginTop: 80 }} />
       <SupportEditors t={t} contacts={contacts} articles={articles} />
 
       <DomainManager
