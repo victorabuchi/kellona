@@ -6,6 +6,8 @@ import type { Viewer } from '../lib/auth/viewer';
 import type { T } from '../lib/i18n';
 import type { MessageKey } from '../lib/i18n/messages';
 import { stopActingAction } from '../lib/auth/acting-actions';
+import { signOutAction } from '../lib/auth/actions';
+import { DEFAULT_BRAND } from '../lib/brand/defaults';
 
 type Tab = { href: string; label: MessageKey; icon: keyof typeof ICONS };
 
@@ -17,10 +19,17 @@ const ICONS = {
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
 };
 
-function tabsFor(viewer: Viewer): Tab[] {
+function tabsFor(viewer: Viewer, hasOrg: boolean): Tab[] {
   if (viewer.kind === 'resident') {
     return [
       { href: '/book', label: 'nav.book', icon: 'book' },
+      { href: '/account', label: 'nav.account', icon: 'user' },
+    ];
+  }
+  // Super-admin on Kellona's own address: organizations and account only.
+  if (!hasOrg) {
+    return [
+      { href: '/platform', label: 'nav.organizations', icon: 'grid' },
       { href: '/account', label: 'nav.account', icon: 'user' },
     ];
   }
@@ -41,14 +50,16 @@ export default function AppShell({
   title,
   children,
 }: {
-  org: OrgContext;
+  org: OrgContext | null;
   viewer: Viewer;
   t: T;
   active: string;
   title: string;
   children: React.ReactNode;
 }) {
-  const tabs = tabsFor(viewer);
+  const tabs = tabsFor(viewer, Boolean(org));
+  const brand = org?.brand ?? DEFAULT_BRAND;
+  const name = org?.name ?? 'Kellona';
   return (
     <div className={styles.shell}>
       {viewer.kind === 'resident' && viewer.actingAdminId && (
@@ -58,22 +69,32 @@ export default function AppShell({
         </form>
       )}
       <header className={styles.top}>
-        <Link href={tabs[0]!.href} className={styles.brand} aria-label={org.name}>
-          <Logo brand={org.brand} name={org.name} height={32} />
+        <Link href={tabs[0]!.href} className={styles.brand} aria-label={name}>
+          <Logo brand={brand} name={name} height={32} />
         </Link>
-        <nav className={styles.topNav}>
-          {tabs.map((tab) => (
-            <Link key={tab.href} href={tab.href} className={styles.topLink} aria-current={active === tab.href ? 'page' : undefined}>
-              {t(tab.label)}
-            </Link>
-          ))}
-        </nav>
+        <div className={styles.topRight}>
+          <nav className={styles.topNav}>
+            {tabs.map((tab) => (
+              <Link key={tab.href} href={tab.href} className={styles.topLink} aria-current={active === tab.href ? 'page' : undefined}>
+                {t(tab.label)}
+              </Link>
+            ))}
+          </nav>
+          <form action={signOutAction}>
+            <button type="submit" className={styles.signOut} aria-label={t('nav.signOut')} title={t('nav.signOut')}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+              <span>{t('nav.signOut')}</span>
+            </button>
+          </form>
+        </div>
       </header>
       <main className={styles.main}>
         <h1 className={styles.title}>{title}</h1>
         {children}
       </main>
-      <nav className={styles.tabs} aria-label={org.shortName}>
+      <nav className={styles.tabs} aria-label={org?.shortName ?? name}>
         {tabs.map((tab) => (
           <Link key={tab.href} href={tab.href} className={styles.tab} aria-current={active === tab.href ? 'page' : undefined}>
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

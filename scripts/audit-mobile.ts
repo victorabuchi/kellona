@@ -39,6 +39,8 @@ const routes: Array<{ path: string; cookie: string | null; host?: string }> = [
   { path: '/signup?sent=1', cookie: null, host: 'localhost' },
   { path: '/privacy', cookie: null, host: 'localhost' },
   { path: '/terms', cookie: null, host: 'localhost' },
+  { path: '/platform', cookie: login.cookie!, host: 'localhost' },
+  { path: '/account', cookie: login.cookie!, host: 'localhost' },
   { path: '/', cookie: null },
   { path: '/?error=invalid&sent=1&dev=http%3A%2F%2Fdemo-north.localhost%3A3000%2Fauth%2Fverify%3Ftoken%3Dabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJ', cookie: null },
   { path: '/', cookie: null, host: 'unknown-org.localhost' },
