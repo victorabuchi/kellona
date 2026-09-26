@@ -89,6 +89,16 @@ try {
         for (const el of document.querySelectorAll('body *')) {
           // Decorative, clipped glows are allowed past the edge; the page scroll check still applies.
           if (el.closest('[aria-hidden="true"]')) continue;
+          // Inside a horizontal scroller (a carousel) is fine if the scroller fits.
+          let clipped = false;
+          for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+            const o = getComputedStyle(p).overflowX;
+            if ((o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') && p.getBoundingClientRect().right <= inner + 1) {
+              clipped = true;
+              break;
+            }
+          }
+          if (clipped) continue;
           const r = el.getBoundingClientRect();
           if (r.width > 0 && r.right > inner + 1) {
             offenders.push(el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : '') + ' right=' + Math.round(r.right));
