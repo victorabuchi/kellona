@@ -29,7 +29,7 @@ export default async function OrgSettingsPage({ params, searchParams }: PageProp
   );
 
   return (
-    <Frame org={here} viewer={viewer} t={t} locale={locale} active="/platform" title={org.name}>
+    <Frame org={here} viewer={viewer} t={t} locale={locale} active={here?.id === org.id ? `/platform/o/${org.id}` : '/platform'} title={org.name}>
       <Link href="/platform" className={styles.muted}>
         {t('platform.title')}
       </Link>

@@ -7,6 +7,8 @@ import { getT } from '../../lib/i18n';
 import { requireViewer } from '../../lib/auth/viewer';
 import { signOutAction } from '../../lib/auth/actions';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import ThemeSwitcher from '../../components/ThemeSwitcher';
+import { readTheme } from '../../lib/theme';
 
 export const metadata: Metadata = { title: 'Account' };
 
@@ -33,7 +35,12 @@ export default async function AccountPage() {
           {org ? ` · ${org.name}` : ''}
         </span>
       </div>
-      <LanguageSwitcher locales={org?.locales ?? ['fi', 'en']} current={locale} back="/account" label={t('common.language')} />
+      <div className={styles.card}>
+        <span className={styles.rowTitle}>{t('theme.label')}</span>
+        <ThemeSwitcher initial={await readTheme()} labels={{ light: t('theme.light'), dark: t('theme.dark'), system: t('theme.system') }} />
+        <span className={styles.rowTitle}>{t('common.language')}</span>
+        <LanguageSwitcher locales={org?.locales ?? ['fi', 'en']} current={locale} back="/account" label={t('common.language')} />
+      </div>
       <div className={styles.actions}>
         {viewer.kind === 'admin' && (
           <Link className={styles.btn} href="/platform">

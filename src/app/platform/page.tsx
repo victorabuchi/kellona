@@ -1,117 +1,100 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Frame from '../../components/Frame';
+import Modal from '../../components/Modal';
+import OrgGrid from '../../components/OrgGrid';
 import styles from '../../components/app.module.css';
+import shell from '../../components/shell.module.css';
 import { db } from '../../prisma/db';
 import { getCurrentOrg } from '../../lib/tenant/org';
+import { orgScope } from '../../lib/tenant/scope';
 import { getT } from '../../lib/i18n';
 import { requireAdmin } from '../../lib/auth/viewer';
 import { createOrgAction } from '../../lib/platform/actions';
+import { DEFAULT_BRAND } from '../../lib/brand/defaults';
 
-export const metadata: Metadata = { title: 'Platform' };
+export const metadata: Metadata = { title: 'Organizations' };
 
 export default async function PlatformPage({ searchParams }: PageProps<'/platform'>) {
-  const { error } = await searchParams;
+  const sp = await searchParams;
   const viewer = await requireAdmin();
-  const org = await getCurrentOrg();
-  const { t, locale } = await getT(org);
-  const [orgs, requests] = await Promise.all([
-    db.orm.public.Organization.orderBy((o) => o.name.asc()).all(),
-    db.orm.public.AccessRequest.orderBy((r) => r.createdAt.desc()).limit(50).all(),
-  ]);
+  const here = await getCurrentOrg();
+  const { t, locale } = await getT(here);
+  const orgs = await db.orm.public.Organization.orderBy((o) => o.name.asc()).include('brand', (b) => b).all();
+  const counts = await Promise.all(orgs.map(async (o) => (await orgScope(o.id).buildings.q().all()).length));
+  const openForm = Boolean(sp['new'] || sp['error']);
+
+  const field = (name: string, label: Parameters<typeof t>[0], opts: { type?: string; required?: boolean; hint?: string; pattern?: string } = {}) => (
+    <label className={styles.field} key={name}>
+      {t(label)}
+      <input className={styles.input} name={name} type={opts.type ?? 'text'} required={opts.required} pattern={opts.pattern} />
+      {opts.hint && <span className={styles.hint}>{opts.hint}</span>}
+    </label>
+  );
 
   return (
-    <Frame org={org} viewer={viewer} t={t} locale={locale} active="/platform" title={t('platform.title')}>
+    <Frame org={here} viewer={viewer} t={t} locale={locale} active="/platform" title={t('platform.yours')}>
       <p className={styles.lede}>{t('platform.lede')}</p>
-      <ul className={styles.list}>
-        {orgs.map((o) => (
-          <li key={o.id} className={styles.row}>
-            <span className={styles.rowText}>
-              <span className={styles.rowTitle}>{o.name}</span>
-              <span className={styles.muted}>
-                {o.slug} · {o.status}
-                {o.isDemo ? ` · ${t('platform.demo')}` : ''}
+      <OrgGrid
+        orgs={orgs.map((o, i) => ({
+          id: o.id,
+          name: o.name,
+          slug: o.slug,
+          status: o.status,
+          isDemo: o.isDemo,
+          color: o.brand?.primaryColor ?? DEFAULT_BRAND.primaryColor,
+          icon: o.brand?.appIconUrl ?? o.brand?.faviconUrl ?? null,
+          buildings: t('platform.buildingsCount', { n: counts[i]! }),
+        }))}
+        labels={{ search: t('platform.search'), noMatch: t('platform.noMatch'), open: t('platform.open'), settings: t('platform.edit'), demo: t('platform.demo') }}
+        action={
+          <Modal
+            key="new-org"
+            title={t('nav.newOrg')}
+            description={t('platform.newLede')}
+            triggerClass={shell.primary}
+            openInitially={openForm}
+            trigger={
+              <span key="trigger" style={{ display: 'contents' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                {t('nav.newOrg')}
               </span>
-            </span>
-            <span className={styles.actions}>
-              <Link className={styles.btnGhost} href={`/platform/o/${o.id}`}>
-                {t('platform.edit')}
-              </Link>
-              {/* A plain link: the route hands the session over to the other address. */}
-              <a className={styles.btn} href={`/platform/open/${o.id}`}>
-                {t('platform.open')}
-              </a>
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <section className={styles.section}>
-        <h2 className={styles.h2}>{t('platform.requests')}</h2>
-        {requests.length === 0 ? (
-          <p className={styles.empty}>{t('platform.noRequests')}</p>
-        ) : (
-          <ul className={styles.list}>
-            {requests.map((r) => (
-              <li key={r.id} className={styles.row}>
-                <span className={styles.rowText}>
-                  <span className={styles.rowTitle}>{r.organizationName}</span>
-                  <span className={styles.muted}>
-                    {r.contactName} · <a href={`mailto:${r.email}`}>{r.email}</a>
-                    {r.phone ? ` · ${r.phone}` : ''}
-                    {r.residents ? ` · ${r.residents}` : ''} · {r.createdAt.slice(0, 10)}
-                  </span>
-                  {r.message && <span className={styles.muted}>{r.message}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <form action={createOrgAction} className={styles.card}>
-        <h2 className={styles.h2}>{t('platform.create')}</h2>
-        {error && <p className={styles.alert}>{t('platform.error')}</p>}
-        <div className={styles.form}>
-          <label className={styles.field}>
-            {t('manage.name')}
-            <input className={styles.input} name="name" required maxLength={120} />
-          </label>
-          <label className={styles.field}>
-            {t('platform.shortName')}
-            <input className={styles.input} name="shortName" maxLength={40} />
-          </label>
-          <label className={styles.field}>
-            {t('platform.slug')}
-            <input className={styles.input} name="slug" required pattern="[a-z0-9][a-z0-9-]*[a-z0-9]" maxLength={50} />
-            <span className={styles.hint}>{t('platform.slugHint')}</span>
-          </label>
-          <label className={styles.field}>
-            {t('platform.legalName')}
-            <input className={styles.input} name="legalName" maxLength={200} />
-          </label>
-          <label className={styles.field}>
-            {t('platform.supportEmail')}
-            <input className={styles.input} name="supportEmail" type="email" />
-          </label>
-          <label className={styles.field}>
-            {t('platform.defaultLocale')}
-            <select className={styles.select} name="defaultLocale" defaultValue="fi">
-              <option value="fi">Suomi</option>
-              <option value="en">English</option>
-            </select>
-          </label>
-          <label className={styles.field}>
-            {t('platform.primary')}
-            <input className={styles.swatch} type="color" name="primaryColor" defaultValue="#2f5d8a" />
-          </label>
-          <label className={styles.field}>
-            {t('platform.accent')}
-            <input className={styles.swatch} type="color" name="accentColor" defaultValue="#e0a526" />
-          </label>
-          <button className={styles.btn}>{t('platform.createButton')}</button>
-        </div>
-      </form>
+            }
+          >
+            <form action={createOrgAction} className={styles.form}>
+              {sp['error'] && (
+                <p key="error" className={`${styles.alert} ${styles.full}`}>
+                  {t('platform.error')}
+                </p>
+              )}
+              {field('name', 'manage.name', { required: true })}
+              {field('shortName', 'platform.shortName')}
+              {field('slug', 'platform.slug', { required: true, pattern: '[a-z0-9][a-z0-9-]*[a-z0-9]', hint: t('platform.slugHint') })}
+              {field('legalName', 'platform.legalName')}
+              {field('supportEmail', 'platform.supportEmail', { type: 'email' })}
+              <label className={styles.field} key="defaultLocale">
+                {t('platform.defaultLocale')}
+                <select className={styles.select} name="defaultLocale" defaultValue="fi">
+                  <option value="fi">Suomi</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+              <label className={styles.field} key="primaryColor">
+                {t('platform.primary')}
+                <input className={styles.swatch} type="color" name="primaryColor" defaultValue="#2f5d8a" />
+              </label>
+              <label className={styles.field} key="accentColor">
+                {t('platform.accent')}
+                <input className={styles.swatch} type="color" name="accentColor" defaultValue="#e0a526" />
+              </label>
+              <button key="submit" className={`${styles.btn} ${styles.full}`}>
+                {t('platform.createButton')}
+              </button>
+            </form>
+          </Modal>
+        }
+      />
     </Frame>
   );
 }
