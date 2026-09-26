@@ -3,6 +3,7 @@ import styles from './landing.module.css';
 import Showcase, { type ShowcaseLabels } from './Showcase';
 import RoleCards from './RoleCards';
 import HowItWorks from './HowItWorks';
+import LandingNav from './LandingNav';
 import KindIcon from '../KindIcon';
 import type { T } from '../../lib/i18n';
 import type { Locale, MessageKey } from '../../lib/i18n/messages';
@@ -112,48 +113,103 @@ export default function Landing({ t, locale, signedIn, contactEmail }: { t: T; l
 
   return (
     <div className={styles.page}>
-      <nav className={styles.nav}>
-        <div className={`${styles.wrap} ${styles.navInner}`}>
-          <Link href="/" className={styles.navLogo} aria-label="Kellona">
-            <Wordmark />
-          </Link>
-          <div className={styles.navLinks}>
-            <a href="#showcase">{k('landing.nav.showcase')}</a>
-            <a href="#features">{k('landing.nav.features')}</a>
-            <a href="#how">{k('landing.nav.how')}</a>
-          </div>
-          <div className={styles.navActions}>
-            {signedIn ? (
-              <Link href="/platform" className={styles.btnPrimary}>
-                {k('landing.dashboard')}
+      <LandingNav
+        logo={<Wordmark />}
+        menuLabel={k('landing.menu')}
+        menus={[
+          {
+            id: 'product',
+            label: k('menu.product'),
+            columns: [
+              {
+                heading: k('menu.booking'),
+                items: [
+                  { title: k('kind.laundry'), desc: k('menu.d.laundry'), href: '#features', icon: 'laundry' },
+                  { title: k('kind.sauna'), desc: k('menu.d.sauna'), href: '#features', icon: 'sauna' },
+                  { title: k('kind.parking'), desc: k('menu.d.parking'), href: '#features', icon: 'parking' },
+                  { title: k('menu.spaces'), desc: k('menu.d.spaces'), href: '#features', icon: 'space' },
+                ],
+              },
+              {
+                heading: k('menu.tools'),
+                items: [
+                  { title: k('landing.f4.t'), desc: k('menu.d.group'), href: '#showcase', icon: 'people' },
+                  { title: k('landing.f5.t'), desc: k('menu.d.weekly'), href: '#features', icon: 'repeat' },
+                  { title: k('landing.f6.t'), desc: k('menu.d.reminders'), href: '#features', icon: 'bell' },
+                  { title: k('manage.qr'), desc: k('menu.d.qr'), href: '#features', icon: 'qr' },
+                ],
+              },
+            ],
+            side: {
+              heading: k('menu.explore'),
+              links: [
+                { label: k('menu.seeIt'), href: '#showcase' },
+                { label: k('menu.allFeatures'), href: '#features' },
+                { label: k('menu.pilot'), href: '#how' },
+              ],
+            },
+            footer: { label: k('menu.footerProduct'), href: '/signup' },
+          },
+          {
+            id: 'solutions',
+            label: k('menu.solutions'),
+            columns: [
+              {
+                heading: k('menu.who'),
+                items: [
+                  { title: k('menu.office'), desc: k('menu.d.office'), href: '#how', icon: 'building' },
+                  { title: k('menu.residents'), desc: k('menu.d.residents'), href: '#how', icon: 'phone' },
+                ],
+              },
+              {
+                heading: k('menu.brand'),
+                items: [
+                  { title: k('menu.address'), desc: k('menu.d.address'), href: '#showcase', icon: 'globe' },
+                  { title: k('menu.logo'), desc: k('menu.d.logo'), href: '#showcase', icon: 'palette' },
+                  { title: k('landing.f7.t'), desc: k('menu.d.import'), href: '#features', icon: 'upload' },
+                  { title: k('landing.f8.t'), desc: k('menu.d.data'), href: '/privacy', icon: 'shield' },
+                ],
+              },
+            ],
+            side: {
+              heading: k('menu.start'),
+              links: [
+                { label: k('landing.ctaPrimary'), href: '/signup' },
+                { label: k('landing.login'), href: '/login' },
+                { label: k('common.privacy'), href: '/privacy' },
+              ],
+            },
+            footer: { label: k('menu.footerSolutions'), href: '/signup' },
+          },
+        ]}
+        plain={[{ label: k('landing.nav.how'), href: '#how' }]}
+        actions={
+          signedIn ? (
+            <Link href="/platform" className={styles.btnPrimary}>
+              {k('landing.dashboard')}
+            </Link>
+          ) : (
+            <>
+              <Link href="/login" className={styles.btnGhost}>
+                {k('landing.login')}
               </Link>
-            ) : (
-              <>
-                <Link href="/login" className={styles.btnGhost}>
-                  {k('landing.login')}
-                </Link>
-                <Link href="/signup" className={`${styles.btnPrimary} ${styles.navSignup}`}>
-                  {k('landing.signup')}
-                </Link>
-              </>
+              <Link href="/signup" className={`${styles.btnPrimary} ${styles.navSignup}`}>
+                {k('landing.signup')}
+              </Link>
+            </>
+          )
+        }
+        mobileExtra={
+          <div className={styles.mobileExtra}>
+            {!signedIn && (
+              <Link href="/signup" className={styles.btnPrimary}>
+                {k('landing.signup')}
+              </Link>
             )}
-            <details className={styles.menu}>
-              <summary aria-label={k('landing.menu')}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M4 7h16M4 12h16M4 17h16" />
-                </svg>
-              </summary>
-              <div className={styles.menuPanel}>
-                <a href="#showcase">{k('landing.nav.showcase')}</a>
-                <a href="#features">{k('landing.nav.features')}</a>
-                <a href="#how">{k('landing.nav.how')}</a>
-                {!signedIn && <Link href="/signup">{k('landing.signup')}</Link>}
-                <Langs locale={locale} back="/" />
-              </div>
-            </details>
+            <Langs locale={locale} back="/" />
           </div>
-        </div>
-      </nav>
+        }
+      />
 
       <header className={styles.hero}>
         <div className={styles.blobA} aria-hidden="true" />
