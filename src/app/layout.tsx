@@ -6,6 +6,7 @@ import { getT } from '../lib/i18n';
 import { brandCss } from '../lib/brand/css';
 import { derivePalette } from '../lib/brand/color';
 import { DEFAULT_BRAND } from '../lib/brand/defaults';
+import { readTheme } from '../lib/theme';
 
 const figtree = Figtree({ subsets: ['latin', 'latin-ext'], variable: '--font-sans' });
 
@@ -40,8 +41,9 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const org = await getCurrentOrg();
   const { locale } = await getT(org);
   const brand = org?.brand ?? DEFAULT_BRAND;
+  const theme = await readTheme();
   return (
-    <html lang={locale} className={figtree.variable}>
+    <html lang={locale} className={figtree.variable} data-theme={theme}>
       <head>
         <style id="brand" dangerouslySetInnerHTML={{ __html: brandCss(brand) }} />
       </head>

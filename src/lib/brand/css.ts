@@ -23,5 +23,5 @@ export function brandCss(brand: Pick<BrandInput, 'primaryColor' | 'accentColor'>
   const accent = isHexColor(brand.accentColor) ? brand.accentColor : '#e0a526';
   const light = vars(derivePalette(primary, accent, 'light'));
   const dark = vars(derivePalette(primary, accent, 'dark'));
-  return `:root{${light}}@media (prefers-color-scheme: dark){:root{${dark}}}`;
+  return `:root{${light}}:root[data-theme="dark"]{${dark}}@media (prefers-color-scheme: dark){:root[data-theme="system"]{${dark}}}`;
 }
