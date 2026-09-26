@@ -986,6 +986,13 @@
                   "kind": "scalar"
                 }
               },
+              "maxRepeatWeeks": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -1128,6 +1135,9 @@
                 },
                 "maxHoursPerWeek": {
                   "column": "maxHoursPerWeek"
+                },
+                "maxRepeatWeeks": {
+                  "column": "maxRepeatWeeks"
                 },
                 "name": {
                   "column": "name"
@@ -3733,6 +3743,15 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "maxRepeatWeeks": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -5106,7 +5125,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9ac4fe93d4849f49f4c71d108e9755c2761908ea0bfd5bb2ec339c4eab37fd7c"
+    "storageHash": "efd4acb77501028d39044f6763e951b790ed45b8e2b07d7ca78bed56c6a861b8"
   },
   "execution": {
     "executionHash": "026946f9b336ed4bcd08c288c42dfb94fd1704326630d0a9b549488a74944001",

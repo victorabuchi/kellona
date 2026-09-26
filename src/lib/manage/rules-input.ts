@@ -1,4 +1,4 @@
-import { DEFAULT_RULES, isAmenityKind, type Rules } from '../booking/kinds';
+import { DEFAULT_RULES, isAmenityKind, MAX_REPEAT_WEEKS, type Rules } from '../booking/kinds';
 
 function int(formData: FormData, name: string, min: number, max: number): number | null {
   const raw = String(formData.get(name) ?? '').trim();
@@ -33,5 +33,6 @@ export function readRules(formData: FormData, kind: string, base?: Rules): Rules
     maxHoursPerWeek: int(formData, 'maxHoursPerWeek', 1, 168) ?? fallback.maxHoursPerWeek,
     advanceDays: int(formData, 'advanceDays', 1, 365) ?? fallback.advanceDays,
     cancelCutoffMinutes: int(formData, 'cancelCutoffMinutes', 0, 10080) ?? fallback.cancelCutoffMinutes,
+    maxRepeatWeeks: int(formData, 'maxRepeatWeeks', 1, MAX_REPEAT_WEEKS) ?? fallback.maxRepeatWeeks,
   };
 }

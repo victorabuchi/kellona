@@ -19,6 +19,7 @@ export default function RuleFields({ t, rules }: { t: T; rules?: Rules }) {
       {field('maxHoursPerWeek', 'manage.maxPerWeek', 1, 168)}
       {field('advanceDays', 'manage.advanceDays', 1, 365)}
       {field('cancelCutoffMinutes', 'manage.cancelCutoff', 0, 10080)}
+      {field('maxRepeatWeeks', 'manage.maxRepeat', 1, 12)}
       <label className={styles.field}>
         {t('manage.turns')}
         <input className={styles.input} name="turnStartHours" defaultValue={rules?.turnStartHours ?? ''} placeholder="16,18,20" />

@@ -55,7 +55,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
   if (!ctx) redirect('/book');
-  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number }) | null;
+  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number; maxRepeatWeeks: number }) | null;
   if (!facility || !isAmenityKind(facility.kind) || facility.kind === 'parking') redirect('/book');
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
   if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect('/book');
@@ -240,7 +240,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
           place: ctx.buildingName,
           capacity: facility.capacity,
           withNote: isSpaceKind(facility.kind),
-          maxRepeat: MAX_REPEAT_WEEKS,
+          maxRepeat: Math.max(1, Math.min(MAX_REPEAT_WEEKS, facility.maxRepeatWeeks)),
         }}
         usage={{ used: usedHours, max: facility.maxHoursPerWeek }}
         people={people}
@@ -275,7 +275,10 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
           otherResidents: t('book.otherResidents'),
           apt: t('book.apt'),
           limitReached: t('board.limitReached'),
-          weeksN: t('book.weeks', { n: '{n}' }),
+          weeksN: t('board.weeksShort', { n: '{n}' }),
+          repeatWeekly: t('board.repeatWeekly'),
+          repeatFor: t('board.repeatFor'),
+          repeatNote: t('board.repeatNote'),
           hoursN: t('book.hours', { n: '{n}' }),
           after: t('board.after', { n: '{n}', max: '{max}' }),
           cancelUntil: t('board.cancelUntil', { time: '{time}' }),

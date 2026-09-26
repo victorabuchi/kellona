@@ -48,7 +48,8 @@ export async function bookAction(formData: FormData) {
     facility,
     start,
     hours: intIn(formData, 'hours', 1, 24, facility.slotHours),
-    repeatWeeks: intIn(formData, 'repeatWeeks', 1, MAX_REPEAT_WEEKS, 1),
+    // Never more weeks than this facility allows.
+    repeatWeeks: intIn(formData, 'repeatWeeks', 1, Math.max(1, Math.min(MAX_REPEAT_WEEKS, (facility as { maxRepeatWeeks?: number }).maxRepeatWeeks ?? 1)), 1),
     participantIds,
     note: String(formData.get('note') ?? '').trim().slice(0, 200) || null,
     now: Date.now(),

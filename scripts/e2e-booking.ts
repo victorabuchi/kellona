@@ -93,6 +93,10 @@ try {
 
   const ok = await book(c1, laundry.id, t10);
   check('laundry slot booked', param(ok.location, 'ok') === 'booked', ok.location);
+  const noRepeat = await book(c2, laundry.id, at(addDays(tomorrow, 1), 11), { repeatWeeks: '4' });
+  const laundryRows = await s.bookings.q().where({ facilityId: laundry.id, residentId: r2.id }).all();
+  check('laundry ignores repeat requests (repeating is off for laundry)', param(noRepeat.location, 'ok') === 'booked' && laundryRows.length === 1 && !laundryRows[0]!.seriesId, `${noRepeat.location} ${laundryRows.length}`);
+  for (const row of laundryRows) await s.bookings.q().where({ id: row.id }).delete();
   const clash = await book(c2, laundry.id, t10);
   check('same slot is taken for someone else', param(clash.location, 'error') === 'taken', clash.location);
   const past = await book(c2, laundry.id, at(addDays(dayStart(new Date()), -1), 10));

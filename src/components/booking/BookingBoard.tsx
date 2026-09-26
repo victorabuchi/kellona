@@ -49,7 +49,10 @@ export type BoardLabels = Record<
   | 'hoursN'
   | 'after'
   | 'cancelUntil'
-  | 'cancelClosed',
+  | 'cancelClosed'
+  | 'repeatWeekly'
+  | 'repeatFor'
+  | 'repeatNote',
   string
 >;
 
@@ -78,6 +81,35 @@ function Icon({ d, size = 18 }: { d: string; size?: number }) {
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={d} />
     </svg>
+  );
+}
+
+// Off by default; switching it on offers a few week counts up to the facility's limit.
+function RepeatPicker({ max, labels }: { max: number; labels: BoardLabels }) {
+  const [on, setOn] = useState(false);
+  const choices = [...new Set([2, 4, 8, 12, max].filter((n) => n >= 2 && n <= max))].sort((a, b) => a - b);
+  const [weeks, setWeeks] = useState(choices[0] ?? 2);
+  return (
+    <div className={styles.repeat}>
+      <label className={styles.switchRow}>
+        <span>{labels.repeatWeekly}</span>
+        <input type="checkbox" role="switch" className={styles.switch} checked={on} onChange={(e) => setOn(e.target.checked)} />
+      </label>
+      <input type="hidden" name="repeatWeeks" value={on ? weeks : 1} />
+      {on && (
+        <>
+          <span className={styles.note}>{labels.repeatFor}</span>
+          <div className={styles.segments} role="radiogroup">
+            {choices.map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={weeks === n} className={styles.segment} onClick={() => setWeeks(n)}>
+                {fill(labels.weeksN, { n })}
+              </button>
+            ))}
+          </div>
+          <span className={styles.note}>{labels.repeatNote}</span>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -256,19 +288,7 @@ export default function BookingBoard(props: Props) {
                 ) : (
                   <input type="hidden" name="hours" value={lengths[0] ?? 1} />
                 )}
-                {facility.maxRepeat > 1 && (
-                  <label className={styles.field}>
-                    {labels.repeat}
-                    <select name="repeatWeeks" className={styles.select} defaultValue="1">
-                      <option value="1">{labels.once}</option>
-                      {Array.from({ length: facility.maxRepeat - 1 }, (_, i) => i + 2).map((n) => (
-                        <option key={n} value={n}>
-                          {fill(labels.weeksN, { n })}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
+                {facility.maxRepeat > 1 && <RepeatPicker max={facility.maxRepeat} labels={labels} />}
                 {facility.withNote && (
                   <label className={styles.field}>
                     {labels.note}
