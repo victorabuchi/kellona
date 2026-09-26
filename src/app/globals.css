@@ -97,3 +97,29 @@ textarea {
   outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
+
+/* Theme aware logos (see components/Logo.tsx). */
+.kl-logo-light {
+  display: block;
+}
+
+.kl-logo-dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .kl-logo-light {
+  display: none;
+}
+
+:root[data-theme='dark'] .kl-logo-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] .kl-logo-light {
+    display: none;
+  }
+  :root[data-theme='system'] .kl-logo-dark {
+    display: block;
+  }
+}
