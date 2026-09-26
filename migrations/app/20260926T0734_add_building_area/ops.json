@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.building.area",
+    "label": "Add column \"area\" to \"building\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "area",
+        "table": "building"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"area\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "building",
+          "area"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"area\"",
+        "sql": "ALTER TABLE \"public\".\"building\" ADD COLUMN \"area\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"area\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "building",
+          "area"
+        ]
+      }
+    ]
+  }
+]

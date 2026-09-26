@@ -9,7 +9,7 @@ test('splits quoted cells', () => {
 test('parses English comma files', () => {
   const r = parseResidentsCsv('building,apartment,name,email,floor\nTalo A,A 1,Maija M,Maija@Example.com,2\n');
   assert.equal(r.errors.length, 0);
-  assert.deepEqual(r.rows[0], { line: 2, building: 'Talo A', unit: 'A 1', name: 'Maija M', email: 'maija@example.com', floor: 2, externalRef: null });
+  assert.deepEqual(r.rows[0], { line: 2, building: 'Talo A', unit: 'A 1', name: 'Maija M', email: 'maija@example.com', floor: 2, externalRef: null, area: null });
 });
 
 test('parses Finnish semicolon files with BOM and reports bad rows', () => {

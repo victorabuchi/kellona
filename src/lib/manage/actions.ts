@@ -22,7 +22,7 @@ export async function addBuildingAction(formData: FormData) {
   const name = str(formData, 'name');
   if (!name || access.buildingIds !== null) redirect('/manage');
   const existing = await access.scope.buildings.q().where({ name }).first();
-  const building = existing ?? (await access.scope.buildings.create({ name, address: str(formData, 'address', 200) || null }));
+  const building = existing ?? (await access.scope.buildings.create({ name, address: str(formData, 'address', 200) || null, area: str(formData, 'area', 80) || null }));
   toBuilding(building.id);
 }
 

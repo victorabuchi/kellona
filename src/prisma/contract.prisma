@@ -96,6 +96,8 @@ model Building {
   organizationId Uuid
   name           String
   address        String?
+  // Neighbourhood the building belongs to (for example a district), used to group buildings.
+  area           String?
   // Identifier in the customer's own system, used to match CSV imports.
   externalRef    String?
   createdAt      TimestamptzString @default(now())

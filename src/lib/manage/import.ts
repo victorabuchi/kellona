@@ -19,7 +19,7 @@ export async function importResidents(scope: OrgScope, rows: ResidentRow[], allo
         result.skipped += 1;
         continue;
       }
-      building = await scope.buildings.create({ name: row.building });
+      building = await scope.buildings.create({ name: row.building, area: row.area });
       buildings.set(row.building.toLowerCase(), building);
     }
     if (allowedBuildingIds && !allowedBuildingIds.includes(building.id)) {

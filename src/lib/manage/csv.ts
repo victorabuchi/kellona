@@ -1,7 +1,7 @@
 // Resident import format. Headers are matched case-insensitively, in English
 // or Finnish, and both comma and semicolon files (Finnish Excel) are accepted.
 
-export type ResidentRow = { line: number; building: string; unit: string; name: string; email: string; floor: number | null; externalRef: string | null };
+export type ResidentRow = { line: number; building: string; unit: string; name: string; email: string; floor: number | null; externalRef: string | null; area: string | null };
 export type ParseResult = { rows: ResidentRow[]; errors: Array<{ line: number; reason: string }> };
 
 const ALIASES: Record<keyof Omit<ResidentRow, 'line'>, string[]> = {
@@ -11,6 +11,7 @@ const ALIASES: Record<keyof Omit<ResidentRow, 'line'>, string[]> = {
   email: ['email', 'e-mail', 'sähköposti', 'sahkoposti'],
   floor: ['floor', 'kerros'],
   externalRef: ['external_id', 'externalid', 'id', 'tunnus'],
+  area: ['area', 'alue', 'kaupunginosa'],
 };
 
 export function splitCsvLine(line: string, delimiter: string): string[] {
@@ -66,6 +67,7 @@ export function parseResidentsCsv(text: string, maxRows = 5000): ParseResult {
       email,
       floor: Number.isInteger(Number.parseInt(get('floor'), 10)) ? Number.parseInt(get('floor'), 10) : null,
       externalRef: get('externalRef').slice(0, 80) || null,
+      area: get('area').slice(0, 80) || null,
     };
     if (!row.building || !row.unit || !row.name) errors.push({ line: row.line, reason: 'building, apartment and name are required' });
     else if (!EMAIL.test(email)) errors.push({ line: row.line, reason: 'invalid email' });

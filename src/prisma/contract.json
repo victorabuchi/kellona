@@ -664,6 +664,13 @@
                   "kind": "scalar"
                 }
               },
+              "area": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -782,6 +789,9 @@
               "fields": {
                 "address": {
                   "column": "address"
+                },
+                "area": {
+                  "column": "area"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -3414,6 +3424,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "area": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "default": {
@@ -5012,7 +5027,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "98070b863b3d2f12a3dd8f3ddf861fb269c7850531d24902c98904d5832bdb73"
+    "storageHash": "979fcc0709412b69a3aee25c8b260f1bf9931d502de6e1311aff5fd0ee7c61fb"
   },
   "execution": {
     "executionHash": "026946f9b336ed4bcd08c288c42dfb94fd1704326630d0a9b549488a74944001",
