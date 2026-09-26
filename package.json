@@ -16,7 +16,8 @@
     "seed:demo": "tsx scripts/seed-demo.ts",
     "setup": "prisma contract emit && prisma db migrate && tsx scripts/seed-demo.ts",
     "test": "tsx --test tests/*.test.ts",
-    "screenshot": "tsx scripts/screenshot.ts"
+    "screenshot": "tsx scripts/screenshot.ts",
+    "admin:create": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@prisma/orm-postgres": "8.0.0-rc.10",

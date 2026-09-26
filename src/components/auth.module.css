@@ -223,3 +223,58 @@
 .dl dd {
   margin: 0;
 }
+
+.error,
+.success {
+  margin: 0;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+}
+
+.success {
+  background: var(--brand-tint);
+}
+
+.notice a {
+  word-break: break-all;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.listText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.smallButton {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
