@@ -278,7 +278,7 @@ try {
 
   // Stop viewing as: back to admin.
   const stop = await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hub1.body, 'Back to admin')]: '' } });
-  check('stop viewing as returns to admin', stop.location.endsWith('/manage/residents') && Boolean(stop.cookie), stop.location);
+  check('stop viewing as returns to admin', stop.location.endsWith('/manage/booking') && Boolean(stop.cookie), stop.location);
 } finally {
   await db.orm.public.Organization.where({ id: org.id }).delete();
   const tokens = [

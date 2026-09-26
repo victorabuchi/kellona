@@ -594,6 +594,10 @@ const en = {
   'board.done': 'Booked. See you then.',
   'board.cancelled': 'Booking cancelled.',
   'board.rules': 'How booking works here',
+  'adminBook.title': 'Booking',
+  'adminBook.lede': 'Open the booking pages exactly as residents see them. Choose a building; you book as yourself in a test apartment there. "Back to admin" in the yellow bar returns you here.',
+  'adminBook.none': 'No building has facilities yet. Add laundry, sauna or spaces under Buildings first.',
+  'adminBook.open': 'Open booking',
   'meta.description': 'Booking for {org} residents.',
 } as const;
 
@@ -1186,6 +1190,10 @@ const fi: Messages = {
   'board.done': 'Varattu. Nähdään silloin.',
   'board.cancelled': 'Varaus peruttu.',
   'board.rules': 'Näin varaaminen toimii',
+  'adminBook.title': 'Varaukset',
+  'adminBook.lede': 'Avaa varaussivut juuri niin kuin asukkaat ne näkevät. Valitse kiinteistö; varaat omalla nimelläsi sen testiasunnossa. Keltaisen palkin "Takaisin ylläpitoon" palauttaa tänne.',
+  'adminBook.none': 'Missään kiinteistössä ei ole vielä tiloja. Lisää ensin pesutupa, sauna tai tiloja kohdassa Kiinteistöt.',
+  'adminBook.open': 'Avaa varaukset',
   'meta.description': 'Varaukset {org}:n asukkaille.',
 };
 

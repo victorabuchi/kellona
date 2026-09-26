@@ -66,7 +66,9 @@ function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Na
     { href: '/manage/residents', label: 'nav.residents', icon: 'people' },
   ];
   if (canManage) people.push({ href: '/manage/staff', label: 'nav.staff', icon: 'badge' });
-  const sections: Item[][] = [[{ href: '/manage/overview', label: 'nav.overview', icon: 'home' }], people];
+  const top: Item[] = [{ href: '/manage/overview', label: 'nav.overview', icon: 'home' }];
+  if (viewer.kind === 'admin') top.push({ href: '/manage/booking', label: 'nav.book', icon: 'book' });
+  const sections: Item[][] = [top, people];
   if (canManage) sections.push([{ href: '/manage/settings', label: 'nav.settings', icon: 'gear' }]);
   void platformUrl;
   return { sections, bottom: [account] };
