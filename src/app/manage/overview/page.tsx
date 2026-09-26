@@ -122,13 +122,14 @@ export default async function OverviewPage() {
   const primary = domains.find((d) => d.isPrimary)?.host ?? null;
   const address = orgBaseUrl({ slug: org.slug, primaryHost: primary }, (await headers()).get('host'));
   const isAdmin = viewer.kind === 'admin';
-  const settings = `/platform/o/${org.id}`;
+  const canManage = buildingIds === null;
+  const settings = '/manage/settings';
   const steps = [
-    { label: t('overview.step.logo'), done: Boolean(brand?.logoLightUrl), href: isAdmin ? settings : null },
+    { label: t('overview.step.logo'), done: Boolean(brand?.logoLightUrl), href: canManage ? settings : null },
     { label: t('overview.step.building'), done: buildings.length > 0, href: '/manage' },
     { label: t('overview.step.facilities'), done: facilities.length > 0, href: buildings[0] ? `/manage/b/${buildings[0].id}#facilities` : '/manage' },
     { label: t('overview.step.residents'), done: residentCount > 0, href: '/manage/residents' },
-    { label: t('overview.step.address'), done: domains.length > 0, href: isAdmin ? settings : null },
+    { label: t('overview.step.address'), done: domains.length > 0, href: canManage ? settings : null },
   ];
   const doneCount = steps.filter((s) => s.done).length;
 
@@ -147,8 +148,8 @@ export default async function OverviewPage() {
   }
   const homeless = residents.filter((r) => !r.unitId).length;
   if (homeless && !buildingIds) checks.push({ sev: 'warning', cat: 'data', title: t('overview.c.homeless'), desc: t('overview.c.homelessD', { n: homeless }), href: '/manage/residents' });
-  if (!brand?.logoLightUrl) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.logo'), desc: t('overview.c.logoD'), href: isAdmin ? settings : null });
-  if (!domains.length) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.address'), desc: t('overview.c.addressD', { host: `${org.slug}.kellona.fi` }), href: isAdmin ? settings : null });
+  if (!brand?.logoLightUrl) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.logo'), desc: t('overview.c.logoD'), href: canManage ? settings : null });
+  if (!domains.length) checks.push({ sev: 'info', cat: 'setup', title: t('overview.c.address'), desc: t('overview.c.addressD', { host: `${org.slug}.kellona.fi` }), href: canManage ? settings : null });
 
   const first = buildings[0];
   const quick = [
@@ -156,7 +157,7 @@ export default async function OverviewPage() {
     { icon: 'people', title: t('overview.q.import'), desc: t('overview.q.importD'), href: '/manage/residents', show: true },
     { icon: 'box', title: t('overview.q.facility'), desc: t('overview.q.facilityD'), href: first ? `/manage/b/${first.id}#facilities` : '/manage', show: true },
     { icon: 'qr', title: t('overview.q.qr'), desc: t('overview.q.qrD'), href: first ? `/manage/b/${first.id}#facilities` : '/manage', show: Boolean(first) },
-    { icon: 'palette', title: t('overview.q.brand'), desc: t('overview.q.brandD'), href: settings, show: isAdmin },
+    { icon: 'palette', title: t('overview.q.brand'), desc: t('overview.q.brandD'), href: settings, show: canManage },
     { icon: 'eye', title: t('overview.q.preview'), desc: t('overview.q.previewD'), href: '/manage/residents', show: isAdmin },
   ].filter((q) => q.show);
 

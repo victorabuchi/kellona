@@ -29,6 +29,7 @@ const ICONS = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z',
   gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',
   back: 'M19 12H5M12 19l-7-7 7-7',
+  badge: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7ZM17 3l2 2 3-3',
 };
 type IconName = keyof typeof ICONS;
 type Item = { href: string; label: MessageKey; icon: IconName; external?: boolean };
@@ -59,14 +60,14 @@ function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Na
       bottom: [account],
     };
   }
-  const sections: Item[][] = [
-    [{ href: '/manage/overview', label: 'nav.overview', icon: 'home' }],
-    [
-      { href: '/manage', label: 'nav.buildings', icon: 'building' },
-      { href: '/manage/residents', label: 'nav.residents', icon: 'people' },
-    ],
+  const canManage = viewer.kind === 'admin' || viewer.role === 'manager';
+  const people: Item[] = [
+    { href: '/manage', label: 'nav.buildings', icon: 'building' },
+    { href: '/manage/residents', label: 'nav.residents', icon: 'people' },
   ];
-  if (viewer.kind === 'admin') sections.push([{ href: `/platform/o/${org.id}`, label: 'nav.settings', icon: 'gear' }]);
+  if (canManage) people.push({ href: '/manage/staff', label: 'nav.staff', icon: 'badge' });
+  const sections: Item[][] = [[{ href: '/manage/overview', label: 'nav.overview', icon: 'home' }], people];
+  if (canManage) sections.push([{ href: '/manage/settings', label: 'nav.settings', icon: 'gear' }]);
   void platformUrl;
   return { sections, bottom: [account] };
 }

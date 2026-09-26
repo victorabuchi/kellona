@@ -44,3 +44,10 @@ export async function requireResident(): Promise<ResidentAccess> {
   if (viewer.kind !== 'resident') redirect('/manage');
   return { org, scope: orgScope(org.id), viewer };
 }
+
+// Staff and organization settings: super-admins and the organization's managers.
+export async function requireManager(): Promise<StaffAccess> {
+  const access = await requireStaff();
+  if (access.buildingIds !== null) redirect('/manage/overview');
+  return access;
+}
