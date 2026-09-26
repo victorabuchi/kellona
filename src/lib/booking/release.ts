@@ -41,7 +41,7 @@ export async function releaseMissed(org: OrgContext, scope: OrgScope, facilities
       await notifyResident(org, scope, w.residentId, {
         title: m['checkin.freedTitle'],
         body: m['checkin.freedBody'].replace('{name}', f.name).replace('{time}', fmtTime(b.startsAt, localeOf(org, resident), org.timezone)),
-        url: `/book/f/${b.facilityId}`,
+        url: `/booking/f/${b.facilityId}`,
       }).catch(() => 'none');
       await scope.watches.q().where({ id: w.id }).delete();
     }
@@ -73,7 +73,7 @@ export async function remindCheckIns(org: OrgContext, scope: OrgScope, facilitie
     await notifyResident(org, scope, b.residentId, {
       title: m['checkin.remindTitle'],
       body: m['checkin.remindBody'].replace('{name}', f.name).replace('{time}', fmtTime(b.startsAt, locale, org.timezone)).replace('{until}', fmtTime(closes, locale, org.timezone)),
-      url: `/book/f/${b.facilityId}`,
+      url: `/booking/f/${b.facilityId}`,
     }).catch(() => 'none');
     sent += 1;
   }

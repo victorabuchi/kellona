@@ -21,13 +21,13 @@ export const metadata: Metadata = { title: 'Booking' };
 
 type Card = { key: string; kind: AmenityKind; name: string; blurb: string; href: string; out?: boolean };
 
-export default async function BookHubPage({ searchParams }: PageProps<'/book'>) {
+export default async function BookHubPage({ searchParams }: PageProps<'/booking'>) {
   const { org, scope, viewer } = await requireResident();
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
   if (!ctx) {
     return (
-      <AppShell org={org} viewer={viewer} t={t} active="/book" title={t('book.title')}>
+      <AppShell org={org} viewer={viewer} t={t} active="/booking" title={t('book.title')}>
         <p className={styles.empty}>{t('book.noHome')}</p>
       </AppShell>
     );
@@ -57,11 +57,11 @@ export default async function BookHubPage({ searchParams }: PageProps<'/book'>) 
     const first = facilities.find((f) => f.kind === kind)!;
     const count = amenities.find((a) => a.kind === kind)!.count;
     const allOut = facilities.filter((f) => f.kind === kind).every((f) => f.outOfOrder);
-    cards.push({ key: kind, kind, name: t(`kind.${kind}`), blurb: allOut ? (first.outOfOrderNote ?? t('outOfOrder.lede')) : t(`blurb.${kind}`, { n: count }), href: kind === 'parking' ? '/book/parking' : `/book/f/${first.id}`, out: allOut });
+    cards.push({ key: kind, kind, name: t(`kind.${kind}`), blurb: allOut ? (first.outOfOrderNote ?? t('outOfOrder.lede')) : t(`blurb.${kind}`, { n: count }), href: kind === 'parking' ? '/booking/parking' : `/booking/f/${first.id}`, out: allOut });
   }
   for (const f of facilities) {
     if (!isSpaceKind(f.kind) || !available.has(f.kind)) continue;
-    cards.push({ key: f.id, kind: f.kind, name: f.name, blurb: f.outOfOrder ? (f.outOfOrderNote ?? t('outOfOrder.lede')) : f.description || t('blurb.space', { n: f.capacity }), href: `/book/f/${f.id}`, out: f.outOfOrder });
+    cards.push({ key: f.id, kind: f.kind, name: f.name, blurb: f.outOfOrder ? (f.outOfOrderNote ?? t('outOfOrder.lede')) : f.description || t('blurb.space', { n: f.capacity }), href: `/booking/f/${f.id}`, out: f.outOfOrder });
   }
 
   // Group sizes for my bookings, and bookings I was invited to.
@@ -84,7 +84,7 @@ export default async function BookHubPage({ searchParams }: PageProps<'/book'>) 
   const accepted = joined.filter((b) => statusOf(b.id) === 'accepted');
 
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book" title={t('book.title')}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking" title={t('book.title')}>
       <p className={styles.lede}>{t('book.lede', { building: ctx.buildingName })}</p>
       {tooLate && (
         <Flash className={styles.alert} tone="err">
@@ -149,7 +149,7 @@ export default async function BookHubPage({ searchParams }: PageProps<'/book'>) 
                 <span className={styles.rowText}>
                   <span className={styles.rowTitle}>{t('book.parkingHeld', { label: claim.facility!.name })}</span>
                 </span>
-                <Link className={styles.btnGhost} href="/book/parking">
+                <Link className={styles.btnGhost} href="/booking/parking">
                   {t('book.manage')}
                 </Link>
               </li>
@@ -173,7 +173,7 @@ export default async function BookHubPage({ searchParams }: PageProps<'/book'>) 
                         <button className={styles.btn}>{t('checkin.button')}</button>
                       </form>
                     )}
-                    <a className={styles.btnGhost} href={`/book/ics/${b.id}`}>
+                    <a className={styles.btnGhost} href={`/booking/ics/${b.id}`}>
                       {t('book.calendar')}
                     </a>
                     {canCancel(b.startsAt, b.facility!.cancelCutoffMinutes, now, b.createdAt) && (
@@ -198,7 +198,7 @@ export default async function BookHubPage({ searchParams }: PageProps<'/book'>) 
                   </span>
                 </span>
                 <span className={styles.actions}>
-                  <a className={styles.btnGhost} href={`/book/ics/${b.id}`}>
+                  <a className={styles.btnGhost} href={`/booking/ics/${b.id}`}>
                     {t('book.calendar')}
                   </a>
                   <form action={respondInviteAction}>

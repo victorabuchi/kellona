@@ -13,14 +13,14 @@ export const metadata: Metadata = { title: 'Parking' };
 
 const ERRORS = { already: 'parking.already', gone: 'parking.gone', notAvailable: 'book.error.notAvailable' } as const;
 
-export default async function ParkingPage({ searchParams }: PageProps<'/book/parking'>) {
+export default async function ParkingPage({ searchParams }: PageProps<'/booking/parking'>) {
   const { error } = await searchParams;
   const { org, scope, viewer } = await requireResident();
   const { t } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
-  if (!ctx) redirect('/book');
+  if (!ctx) redirect('/booking');
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
-  if (!amenities.find((a) => a.kind === 'parking')?.available) redirect('/book');
+  if (!amenities.find((a) => a.kind === 'parking')?.available) redirect('/booking');
 
   const spots = await scope.facilities.q().where({ buildingId: ctx.buildingId, kind: 'parking' }).orderBy((f) => f.name.asc()).all();
   const claims = spots.length ? await scope.parkingClaims.q().where((c) => c.facilityId.in(spots.map((s) => s.id))).all() : [];
@@ -28,8 +28,8 @@ export default async function ParkingPage({ searchParams }: PageProps<'/book/par
   const errorKey = typeof error === 'string' && error in ERRORS ? ERRORS[error as keyof typeof ERRORS] : null;
 
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book" title={t('kind.parking')}>
-      <Link href="/book" className={styles.muted}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking" title={t('kind.parking')}>
+      <Link href="/booking" className={styles.muted}>
         {t('book.allFacilities')}
       </Link>
       <p className={styles.lede}>{t('parking.lede')}</p>

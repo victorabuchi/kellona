@@ -46,15 +46,15 @@ const routes: Array<{ path: string; cookie: string | null; host?: string }> = [
   { path: '/', cookie: null, host: 'unknown-org.localhost' },
   { path: '/privacy', cookie: null },
   { path: '/auth/verify?token=x', cookie: null },
-  { path: '/book', cookie: asResident },
-  { path: `/book/f/${byKind('laundry').id}`, cookie: asResident },
-  { path: `/book/f/${byKind('sauna').id}`, cookie: asResident },
-  { path: `/book/f/${byKind('common_room').id}?error=weekly&skipped=2`, cookie: asResident },
-  { path: '/book/parking', cookie: asResident },
-  { path: '/book/mine', cookie: asResident },
-  { path: '/book/report', cookie: asResident },
-  { path: '/book/help', cookie: asResident },
-  { path: '/book/contact', cookie: asResident },
+  { path: '/booking', cookie: asResident },
+  { path: `/booking/f/${byKind('laundry').id}`, cookie: asResident },
+  { path: `/booking/f/${byKind('sauna').id}`, cookie: asResident },
+  { path: `/booking/f/${byKind('common_room').id}?error=weekly&skipped=2`, cookie: asResident },
+  { path: '/booking/parking', cookie: asResident },
+  { path: '/booking/mine', cookie: asResident },
+  { path: '/booking/report', cookie: asResident },
+  { path: '/booking/help', cookie: asResident },
+  { path: '/booking/contact', cookie: asResident },
   { path: '/manage/reports', cookie: admin },
   { path: '/account', cookie: asResident },
   { path: '/manage/overview', cookie: admin },
@@ -72,7 +72,7 @@ const tomorrow = new Date();
 tomorrow.setDate(tomorrow.getDate() + 1);
 tomorrow.setHours(12, 0, 0, 0);
 const d = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-routes.push({ path: `/book/f/${byKind('common_room').id}?day=${d}&pick=${encodeURIComponent(tomorrow.toISOString())}`, cookie: asResident });
+routes.push({ path: `/booking/f/${byKind('common_room').id}?day=${d}&pick=${encodeURIComponent(tomorrow.toISOString())}`, cookie: asResident });
 
 const browser = await Browser.launch();
 let failures = 0;

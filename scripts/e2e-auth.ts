@@ -120,7 +120,7 @@ try {
   const verify = await http('GET', scratchHost, `/auth/verify?token=${token}`);
   const [consume] = actionIds(verify.body);
   const used = await http('POST', scratchHost, '/auth/verify', { form: { [consume!]: '', token } });
-  check('link signs the resident in and lands on /book', used.status === 303 && used.location.endsWith('/book') && Boolean(used.cookie), `${used.status} ${used.location}`);
+  check('link signs the resident in and lands on /book', used.status === 303 && used.location.endsWith('/booking') && Boolean(used.cookie), `${used.status} ${used.location}`);
   const again = await http('POST', scratchHost, '/auth/verify', { form: { [consume!]: '', token } });
   check('link works only once', again.location.includes('error=link'), again.location);
 

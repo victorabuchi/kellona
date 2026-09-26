@@ -11,7 +11,7 @@ export async function notifyResident(
   message: { title: string; body: string; url?: string },
 ): Promise<'push' | 'email' | 'none'> {
   const title = `${org.senderName}: ${message.title}`;
-  if ((await pushToResident(scope, residentId, { title, body: message.body, url: message.url ?? '/book' })) > 0) return 'push';
+  if ((await pushToResident(scope, residentId, { title, body: message.body, url: message.url ?? '/booking' })) > 0) return 'push';
   const resident = await scope.residents.q().where({ id: residentId }).first();
   if (resident && (await sendEmail({ to: resident.email, senderName: org.senderName, subject: title, text: message.body }))) return 'email';
   return 'none';

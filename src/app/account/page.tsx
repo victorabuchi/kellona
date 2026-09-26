@@ -48,7 +48,7 @@ export default async function AccountPage() {
           </a>
         )}
         {viewer.kind === 'resident' && (
-          <Link className={styles.btnGhost} href="/book/help">
+          <Link className={styles.btnGhost} href="/booking/help">
             {t('nav.help')}
           </Link>
         )}

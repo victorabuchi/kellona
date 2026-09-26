@@ -525,7 +525,7 @@ export default function BookingBoard(props: Props) {
                       : fill(labels.cancelClosed, { time: slot.deadlineLabel ?? '' })}
                 </p>
                 <div className={styles.sheetActions}>
-                  <a className={styles.secondary} href={`/book/ics/${slot.bookingId}`}>
+                  <a className={styles.secondary} href={`/booking/ics/${slot.bookingId}`}>
                     {labels.addCal}
                   </a>
                 </div>

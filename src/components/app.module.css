@@ -21,7 +21,7 @@
   border: 1px solid currentColor;
   background: transparent;
   color: inherit;
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 4px 12px;
   font-weight: 600;
   cursor: pointer;
@@ -408,7 +408,7 @@
 
 .chip {
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);

@@ -417,7 +417,7 @@ function BrandDemo({ step, l }: { step: number; l: ShowcaseLabels }) {
               <Btn color={b.color}>{l.book}</Btn>
             </div>
           ))}
-          <div style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: b.accent, color: '#fff', transition: 'background 0.5s' }}>{name}</div>
+          <div style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 6, background: b.accent, color: '#fff', transition: 'background 0.5s' }}>{name}</div>
         </div>
       </Phone>
       <div style={{ display: 'flex', gap: 12 }}>

@@ -51,7 +51,7 @@ export default async function HelpPage() {
   const kindOf = (title: string) => ['laundry', 'sauna', 'parking', 'gym', 'common_room', 'study_room', 'grill'].find((k) => title.toLowerCase().includes(kindName(k).toLowerCase()));
 
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book/help" title={t('help.title')}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking/help" title={t('help.title')}>
       <p className={styles.lede}>{t('help.lede')}</p>
       {articles.length === 0 ? (
         <p className={styles.empty}>{t('help.none')}</p>

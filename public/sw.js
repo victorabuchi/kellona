@@ -1,6 +1,6 @@
 // Service worker: shows booking reminders and invitations, opens the app on tap.
 self.addEventListener('push', (event) => {
-  let data = { title: 'Kellona', body: '', url: '/book' };
+  let data = { title: 'Kellona', body: '', url: '/booking' };
   try {
     data = { ...data, ...event.data.json() };
   } catch {
@@ -11,6 +11,6 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/book';
+  const url = (event.notification.data && event.notification.data.url) || '/booking';
   event.waitUntil(self.clients.openWindow(url));
 });

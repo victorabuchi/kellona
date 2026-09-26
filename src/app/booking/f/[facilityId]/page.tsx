@@ -50,7 +50,7 @@ const ICON = {
 
 // Booking page for one facility: rules at a glance, weekly usage, and a week
 // board where hovering previews a time and tapping it books or cancels.
-export default async function FacilityPage({ params, searchParams }: PageProps<'/book/f/[facilityId]'>) {
+export default async function FacilityPage({ params, searchParams }: PageProps<'/booking/f/[facilityId]'>) {
   const { facilityId } = await params;
   const sp = await searchParams;
   const one = (k: string) => (typeof sp[k] === 'string' ? (sp[k] as string) : '');
@@ -58,11 +58,11 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const { org, scope, viewer } = await requireResident();
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
-  if (!ctx) redirect('/book');
+  if (!ctx) redirect('/booking');
   const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number; maxRepeatWeeks: number; checkInOpensMinutes: number; checkInGraceMinutes: number; outOfOrder: boolean; outOfOrderNote: string | null }) | null;
-  if (!facility || !isAmenityKind(facility.kind) || facility.kind === 'parking') redirect('/book');
+  if (!facility || !isAmenityKind(facility.kind) || facility.kind === 'parking') redirect('/booking');
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
-  if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect('/book');
+  if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect('/booking');
 
   const now = nowMs();
   // Free up bookings nobody checked in to before showing the week.
@@ -71,7 +71,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const selected = parseDay(one('day'), new Date(now));
   const week = weekStart(selected);
   const weekEnd = addDays(week, 7);
-  const base = `/book/f/${facility.id}`;
+  const base = `/booking/f/${facility.id}`;
   const href = (day: Date) => `${base}?day=${formatDay(day)}`;
   const tag = locale === 'fi' ? 'fi-FI' : 'en-GB';
 
@@ -163,10 +163,10 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const flash = one('ok') === 'checkedin' ? t('checkin.done') : one('ok') === 'watching' ? t('checkin.watching') : one('ok') ? t('board.done') : '';
 
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book" title={siblings.length > 1 ? t(`kind.${facility.kind}` as MessageKey) : facility.name}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking" title={siblings.length > 1 ? t(`kind.${facility.kind}` as MessageKey) : facility.name}>
       <div className={styles.hero}>
         <span className={styles.eyebrow}>{ctx.buildingName}</span>
-        <Link href="/book" className={app.muted}>
+        <Link href="/booking" className={app.muted}>
           {t('book.allFacilities')}
         </Link>
       </div>
@@ -174,7 +174,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
       {siblings.length > 1 && (
         <nav className={app.chips}>
           {siblings.map((s) => (
-            <Link key={s.id} href={`/book/f/${s.id}?day=${formatDay(selected)}`} className={app.chip} aria-current={s.id === facility.id}>
+            <Link key={s.id} href={`/booking/f/${s.id}?day=${formatDay(selected)}`} className={app.chip} aria-current={s.id === facility.id}>
               {s.name}
             </Link>
           ))}
@@ -225,7 +225,7 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
       {facility.outOfOrder && (
         <div className={app.alert} role="status">
           <strong>{t('outOfOrder.label')}.</strong> {facility.outOfOrderNote ?? t('outOfOrder.lede')}{' '}
-          <Link href={`/book/report?facility=${facility.id}`}>{t('nav.report')}</Link>
+          <Link href={`/booking/report?facility=${facility.id}`}>{t('nav.report')}</Link>
         </div>
       )}
       {error && <Flash className={app.alert} tone="err">{t(`book.error.${error}` as MessageKey)}</Flash>}

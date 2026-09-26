@@ -15,7 +15,7 @@ import { nowMs } from '../../../lib/booking/time';
 export const metadata: Metadata = { title: 'My bookings' };
 
 // Everything the resident booked: upcoming, recent history with check-ins and no-shows.
-export default async function MyBookingsPage({ searchParams }: PageProps<'/book/mine'>) {
+export default async function MyBookingsPage({ searchParams }: PageProps<'/booking/mine'>) {
   const { org, scope, viewer } = await requireResident();
   const { t, locale } = await getT(org);
   const now = nowMs();
@@ -38,7 +38,7 @@ export default async function MyBookingsPage({ searchParams }: PageProps<'/book/
   ].sort((a, b) => b.at.localeCompare(a.at));
 
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book/mine" title={t('mine.title')}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking/mine" title={t('mine.title')}>
       <p className={styles.lede}>{t('mine.lede')}</p>
       {tooLate && (
         <Flash className={styles.alert} tone="err">
@@ -71,7 +71,7 @@ export default async function MyBookingsPage({ searchParams }: PageProps<'/book/
                 <span className={styles.rowText}>
                   <span className={styles.rowTitle}>{t('book.parkingHeld', { label: claim.facility!.name })}</span>
                 </span>
-                <Link className={styles.btnGhost} href="/book/parking">
+                <Link className={styles.btnGhost} href="/booking/parking">
                   {t('mine.open')}
                 </Link>
               </li>
@@ -87,14 +87,14 @@ export default async function MyBookingsPage({ searchParams }: PageProps<'/book/
                   </span>
                 </span>
                 <span className={styles.actions}>
-                  <a className={styles.btnGhost} href={`/book/ics/${b.id}`}>
+                  <a className={styles.btnGhost} href={`/booking/ics/${b.id}`}>
                     {t('book.calendar')}
                   </a>
-                  <Link className={styles.btn} href={`/book/f/${b.facilityId}`}>
+                  <Link className={styles.btn} href={`/booking/f/${b.facilityId}`}>
                     {t('mine.open')}
                   </Link>
                   {canCancel(b.startsAt, b.facility!.cancelCutoffMinutes, now, b.createdAt) && (
-                    <ConfirmCancel action={cancelBookingAction} bookingId={b.id} returnTo="/book/mine" labels={cancelLabels} />
+                    <ConfirmCancel action={cancelBookingAction} bookingId={b.id} returnTo="/booking/mine" labels={cancelLabels} />
                   )}
                 </span>
               </li>

@@ -24,7 +24,7 @@
   border: 1px solid currentColor;
   background: transparent;
   color: inherit;
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 4px 12px;
   font-weight: 600;
   cursor: pointer;
@@ -111,7 +111,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   color: var(--muted);
 }
@@ -671,7 +671,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -868,7 +868,7 @@
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: 6px;
   display: grid;
   place-items: center;
   border: 1.5px dashed var(--border);
@@ -893,7 +893,7 @@
 
 .progress {
   height: 6px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -902,7 +902,7 @@
   display: block;
   height: 100%;
   background: linear-gradient(90deg, var(--brand), var(--accent));
-  border-radius: 999px;
+  border-radius: 4px;
 }
 
 /* Search and command palette */
@@ -913,7 +913,7 @@
   height: 36px;
   padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--muted);
   font: inherit;
@@ -1268,7 +1268,7 @@
 
 .meter {
   height: 10px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -1312,7 +1312,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 2px 9px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid color-mix(in srgb, var(--sev) 45%, transparent);
   color: var(--sev);
   background: color-mix(in srgb, var(--sev) 10%, transparent);
@@ -1488,7 +1488,7 @@
   height: 36px;
   padding: 0 32px 0 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   background-color: var(--surface);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23767676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -1593,7 +1593,7 @@
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--surface-2);
   color: var(--brand-text);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
@@ -1634,7 +1634,7 @@
   width: 24px;
   height: 24px;
   margin-top: 1px;
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--brand);
   color: var(--on-brand);
   font-size: 12px;

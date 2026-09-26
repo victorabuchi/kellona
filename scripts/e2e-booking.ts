@@ -77,19 +77,19 @@ try {
   const c3 = await viewAs(r3.id);
   check('view as resident gives resident sessions', Boolean(c1 && c2 && c3));
 
-  const hub1 = await http('GET', host, '/book', { cookie: c1 });
+  const hub1 = await http('GET', host, '/booking', { cookie: c1 });
   check('hub shows laundry, sauna, parking and the room', ['Laundry', 'Sauna', 'Parking', 'Room'].every((w) => hub1.body.includes(w)), hub1.body.slice(0, 200));
   check('hub shows the viewing-as banner', hub1.body.includes('You are viewing the app as R1'));
-  const hub3 = await http('GET', host, '/book', { cookie: c3 });
-  check('apartment exception hides the sauna for A2', !hub3.body.includes(`/book/f/${sauna.id}`));
+  const hub3 = await http('GET', host, '/booking', { cookie: c3 });
+  check('apartment exception hides the sauna for A2', !hub3.body.includes(`/booking/f/${sauna.id}`));
 
   // Laundry: book, clash, past, too far.
   const tomorrow = addDays(dayStart(new Date()), 1);
   const t10 = at(tomorrow, 10);
-  const laundryPage = await http('GET', host, `/book/f/${laundry.id}?day=${formatDay(tomorrow)}&pick=${encodeURIComponent(t10.toISOString())}`, { cookie: c1 });
+  const laundryPage = await http('GET', host, `/booking/f/${laundry.id}?day=${formatDay(tomorrow)}&pick=${encodeURIComponent(t10.toISOString())}`, { cookie: c1 });
   const bookId = actionIn(laundryPage.body, 'name="hours"');
   const book = (cookie: string, facilityId: string, start: Date, extra: Record<string, string | string[]> = {}) =>
-    http('POST', host, `/book/f/${facilityId}`, { cookie, form: { [bookId]: '', facilityId, day: formatDay(start), startsAt: start.toISOString(), hours: '1', repeatWeeks: '1', ...extra } });
+    http('POST', host, `/booking/f/${facilityId}`, { cookie, form: { [bookId]: '', facilityId, day: formatDay(start), startsAt: start.toISOString(), hours: '1', repeatWeeks: '1', ...extra } });
 
   const ok = await book(c1, laundry.id, t10);
   check('laundry slot booked', param(ok.location, 'ok') === 'booked', ok.location);
@@ -127,9 +127,9 @@ try {
   const group = await book(c1, sauna.id, at(week2, 18), { hours: '2', participants: [r2.id, r3.id] });
   check('group sauna booked', param(group.location, 'ok') === 'booked', group.location);
   const groupBooking = await s.bookings.q().where({ facilityId: sauna.id, startsAt: at(week2, 18).toISOString() }).first();
-  const hub2 = await http('GET', host, '/book', { cookie: c2 });
+  const hub2 = await http('GET', host, '/booking', { cookie: c2 });
   check('invitee sees the invitation', hub2.body.includes('R1 invited you'));
-  await http('POST', host, '/book', { cookie: c2, form: { [actionIn(hub2.body, 'name="decision"')]: '', bookingId: groupBooking!.id, decision: 'accept' } });
+  await http('POST', host, '/booking', { cookie: c2, form: { [actionIn(hub2.body, 'name="decision"')]: '', bookingId: groupBooking!.id, decision: 'accept' } });
   const accepted = await s.participants.q().where({ bookingId: groupBooking!.id, residentId: r2.id }).first();
   check('invitee accepts', accepted?.status === 'accepted', accepted?.status);
 
@@ -141,28 +141,28 @@ try {
   const seriesRows = (await s.bookings.q().where({ facilityId: room.id, residentId: r1.id }).orderBy((b) => b.startsAt.asc()).all());
   check('series rows share a series id', seriesRows.length === 3 && new Set(seriesRows.map((r) => r.seriesId)).size === 1 && Boolean(seriesRows[0]!.seriesId));
   check('series keeps the same local hour', seriesRows.every((r) => new Date(r.startsAt).getHours() === 18));
-  const hub1b = await http('GET', host, '/book', { cookie: c1 });
-  await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hub1b.body, 'Cancel this and later weeks')]: '', bookingId: seriesRows[1]!.id } });
+  const hub1b = await http('GET', host, '/booking', { cookie: c1 });
+  await http('POST', host, '/booking', { cookie: c1, form: { [actionIn(hub1b.body, 'Cancel this and later weeks')]: '', bookingId: seriesRows[1]!.id } });
   const left = await s.bookings.q().where({ facilityId: room.id, residentId: r1.id }).all();
   check('cancel series from week two keeps only week one', left.length === 1 && left[0]!.id === seriesRows[0]!.id, String(left.length));
 
   // Parking.
-  const parking = await http('GET', host, '/book/parking', { cookie: c1 });
+  const parking = await http('GET', host, '/booking/parking', { cookie: c1 });
   const claimId = actionIn(parking.body, 'name="facilityId"');
-  await http('POST', host, '/book/parking', { cookie: c1, form: { [claimId]: '', facilityId: p1.id } });
-  const gone = await http('POST', host, '/book/parking', { cookie: c2, form: { [claimId]: '', facilityId: p1.id } });
+  await http('POST', host, '/booking/parking', { cookie: c1, form: { [claimId]: '', facilityId: p1.id } });
+  const gone = await http('POST', host, '/booking/parking', { cookie: c2, form: { [claimId]: '', facilityId: p1.id } });
   check('a claimed spot cannot be taken', param(gone.location, 'error') === 'gone', gone.location);
-  const second = await http('POST', host, '/book/parking', { cookie: c1, form: { [claimId]: '', facilityId: p2.id } });
+  const second = await http('POST', host, '/booking/parking', { cookie: c1, form: { [claimId]: '', facilityId: p2.id } });
   check('one spot per resident', param(second.location, 'error') === 'already', second.location);
-  const parking2 = await http('GET', host, '/book/parking', { cookie: c1 });
-  await http('POST', host, '/book/parking', { cookie: c1, form: { [actionIn(parking2.body, 'Release')]: '' } });
+  const parking2 = await http('GET', host, '/booking/parking', { cookie: c1 });
+  await http('POST', host, '/booking/parking', { cookie: c1, form: { [actionIn(parking2.body, 'Release')]: '' } });
   check('release frees the spot', !(await s.parkingClaims.q().where({ residentId: r1.id }).first()));
 
   // Calendar export.
   const laundryBooking = await s.bookings.q().where({ facilityId: laundry.id, residentId: r1.id }).first();
-  const ics = await http('GET', host, `/book/ics/${laundryBooking!.id}`, { cookie: c1 });
+  const ics = await http('GET', host, `/booking/ics/${laundryBooking!.id}`, { cookie: c1 });
   check('calendar file for own booking', ics.status === 200 && ics.type.startsWith('text/calendar') && ics.body.includes('BEGIN:VEVENT'));
-  const icsOther = await http('GET', host, `/book/ics/${laundryBooking!.id}`, { cookie: c3 });
+  const icsOther = await http('GET', host, `/booking/ics/${laundryBooking!.id}`, { cookie: c3 });
   check("no calendar file for someone else's booking", icsOther.status === 404);
 
   // Staff: cancel a booking, add a facility, switch a kind off for the building.
@@ -172,11 +172,11 @@ try {
   await http('POST', host, `/manage/b/${bA.id}`, { cookie: admin, form: { [actionIn(buildingPage.body, 'name="kind"')]: '', buildingId: bA.id, kind: 'grill', name: 'Grill' } });
   const grill = await s.facilities.q().where({ buildingId: bA.id, name: 'Grill' }).first();
   check('staff adds a facility with default rules', grill?.kind === 'grill' && grill.closeHour === DEFAULT_RULES.grill.closeHour);
-  const hubGrill = await http('GET', host, '/book', { cookie: c1 });
+  const hubGrill = await http('GET', host, '/booking', { cookie: c1 });
   check('new facility appears for residents', hubGrill.body.includes('Grill'));
   await http('POST', host, `/manage/b/${bA.id}`, { cookie: admin, form: { [actionIn(buildingPage.body, 'name="state_grill"')]: '', buildingId: bA.id, state_grill: 'no' } });
-  const hubNoGrill = await http('GET', host, '/book', { cookie: c1 });
-  check('building switch hides it again', !hubNoGrill.body.includes(`/book/f/${grill!.id}`));
+  const hubNoGrill = await http('GET', host, '/booking', { cookie: c1 });
+  check('building switch hides it again', !hubNoGrill.body.includes(`/booking/f/${grill!.id}`));
 
   // CSV import (semicolon, one bad row).
   const csv = `rakennus;asunto;nimi;sähköposti\nC;C 1;Import One;one-${tag}@example.test\nC;C 2;Import Two;two-${tag}@example.test\nC;C 3;No Email;not-an-email`;
@@ -195,19 +195,19 @@ try {
   // A far-off booking still shows its cancel form; the cancel action is the same for every row.
   const farStart = new Date(soonStart.getTime() + 2 * 86_400_000);
   const farBooking = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: farStart.toISOString(), endsAt: new Date(farStart.getTime() + 3_600_000).toISOString() });
-  const hubLate = await http('GET', host, '/book', { cookie: c1 });
+  const hubLate = await http('GET', host, '/booking', { cookie: c1 });
   check('no cancel button once cancelling has closed', !hubLate.body.includes(`name="bookingId" value="${late.id}"`));
   const cancelId = actionIn(hubLate.body, `name="bookingId" value="${farBooking.id}"`);
-  const tooLate = await http('POST', host, '/book', { cookie: c1, form: { [cancelId]: '', bookingId: late.id } });
+  const tooLate = await http('POST', host, '/booking', { cookie: c1, form: { [cancelId]: '', bookingId: late.id } });
   check('cancelling inside the cutoff is refused', tooLate.location.includes('error=tooLate') && Boolean(await s.bookings.q().where({ id: late.id }).first()), tooLate.location);
   const fresh = await s.bookings.create({ facilityId: room.id, residentId: r1.id, startsAt: new Date(soonStart.getTime() + 3_600_000).toISOString(), endsAt: new Date(soonStart.getTime() + 7_200_000).toISOString() });
-  const undo = await http('POST', host, '/book', { cookie: c1, form: { [cancelId]: '', bookingId: fresh.id } });
+  const undo = await http('POST', host, '/booking', { cookie: c1, form: { [cancelId]: '', bookingId: fresh.id } });
   check('a booking made moments ago can be undone inside the cutoff', !undo.location.includes('error') && !(await s.bookings.q().where({ id: fresh.id }).first()), undo.location);
   await s.facilities.q().where({ id: room.id }).update({ cancelCutoffMinutes: 0 });
-  const okCancel = await http('POST', host, '/book', { cookie: c1, form: { [cancelId]: '', bookingId: late.id } });
+  const okCancel = await http('POST', host, '/booking', { cookie: c1, form: { [cancelId]: '', bookingId: late.id } });
   check('cancelling outside the cutoff works', !okCancel.location.includes('error') && !(await s.bookings.q().where({ id: late.id }).first()), okCancel.location);
   await s.bookings.q().where({ id: farBooking.id }).delete();
-  const board = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c1 });
+  const board = await http('GET', host, `/booking/f/${laundry.id}`, { cookie: c1 });
   check('booking board renders the week grid with free and own slots', board.status === 200 && board.body.includes('role="grid"') && board.body.includes('name="startsAt"'));
 
   // Check-in: laundry with a 20 min window and 15 min grace.
@@ -225,20 +225,20 @@ try {
   const ciEarlyB = await mkB(r1.id, earlyStart);
   const ciLate = await mkB(r2.id, lateStart);
   await s.watches.create({ facilityId: laundry.id, residentId: r3.id, startsAt: ciLate.startsAt });
-  const boardCi = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c1 });
+  const boardCi = await http('GET', host, `/booking/f/${laundry.id}`, { cookie: c1 });
   const ciAction = actionIn(boardCi.body, 'Check in');
-  const ciOk = await http('POST', host, `/book/f/${laundry.id}`, { cookie: c1, form: { [ciAction]: '', bookingId: ciOpen.id, returnTo: `/book/f/${laundry.id}` } });
+  const ciOk = await http('POST', host, `/booking/f/${laundry.id}`, { cookie: c1, form: { [ciAction]: '', bookingId: ciOpen.id, returnTo: `/booking/f/${laundry.id}` } });
   check('check-in inside the window works', ciOk.location.includes('ok=checkedin') && Boolean((await s.bookings.q().where({ id: ciOpen.id }).first())?.checkedInAt), ciOk.location);
-  const ciEarly = await http('POST', host, `/book/f/${laundry.id}`, { cookie: c1, form: { [ciAction]: '', bookingId: ciEarlyB.id, returnTo: `/book/f/${laundry.id}` } });
+  const ciEarly = await http('POST', host, `/booking/f/${laundry.id}`, { cookie: c1, form: { [ciAction]: '', bookingId: ciEarlyB.id, returnTo: `/booking/f/${laundry.id}` } });
   check('check-in before the window is refused', ciEarly.location.includes('error=checkinEarly') && !(await s.bookings.q().where({ id: ciEarlyB.id }).first())?.checkedInAt, ciEarly.location);
   check('a missed check-in is released when the board loads', !(await s.bookings.q().where({ id: ciLate.id }).first()));
   const logged = await s.releases.q().where({ facilityId: laundry.id, residentId: r2.id }).all();
   check('the release is logged as a no-show', logged.length === 1);
   check('the watcher was notified and the watch removed', !(await s.watches.q().where({ facilityId: laundry.id, residentId: r3.id }).first()));
-  const boardAfter = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c3 });
+  const boardAfter = await http('GET', host, `/booking/f/${laundry.id}`, { cookie: c3 });
   check('the board shows the checked-in time as in use', boardAfter.body.includes('In use'));
-  const watchPage = await http('GET', host, `/book/f/${laundry.id}`, { cookie: c3 });
-  const watchRes = await http('POST', host, `/book/f/${laundry.id}`, { cookie: c3, form: { [actionIn(watchPage.body, 'Notify me if it frees up')]: '', facilityId: laundry.id, startsAt: ciEarlyB.startsAt, returnTo: `/book/f/${laundry.id}` } });
+  const watchPage = await http('GET', host, `/booking/f/${laundry.id}`, { cookie: c3 });
+  const watchRes = await http('POST', host, `/booking/f/${laundry.id}`, { cookie: c3, form: { [actionIn(watchPage.body, 'Notify me if it frees up')]: '', facilityId: laundry.id, startsAt: ciEarlyB.startsAt, returnTo: `/booking/f/${laundry.id}` } });
   check('residents can ask to be notified about a booked time', watchRes.location.includes('ok=watching') && Boolean(await s.watches.q().where({ facilityId: laundry.id, residentId: r3.id, startsAt: ciEarlyB.startsAt }).first()), watchRes.location);
   const late2 = await mkB(r2.id, new Date(Date.now() - 25 * 60_000 - 3_600_000 * 2));
   const cronCi = await fetch('http://127.0.0.1:3000/api/cron/checkins', { headers: { Authorization: `Bearer ${process.env['CRON_SECRET']}` } });
@@ -248,8 +248,8 @@ try {
   await s.facilities.q().where({ id: laundry.id }).update({ checkInOpensMinutes: 0 });
 
   // Support: report a problem, staff reply and mark out of order, booking blocked.
-  const reportPage = await http('GET', host, '/book/report', { cookie: c1 });
-  const sent = await http('POST', host, '/book/report', { cookie: c1, form: { [actionIn(reportPage.body, 'name="message"')]: '', facilityId: laundry.id, category: 'broken', message: 'Machine stops mid program' } });
+  const reportPage = await http('GET', host, '/booking/report', { cookie: c1 });
+  const sent = await http('POST', host, '/booking/report', { cookie: c1, form: { [actionIn(reportPage.body, 'name="message"')]: '', facilityId: laundry.id, category: 'broken', message: 'Machine stops mid program' } });
   const report = await s.reports.q().where({ residentId: r1.id }).first();
   check('resident sends a problem report', sent.location.includes('sent=1') && report?.facilityId === laundry.id && report.status === 'new', sent.location);
   const inbox = await http('GET', host, '/manage/reports', { cookie: admin });
@@ -258,14 +258,14 @@ try {
   const updated = await s.reports.q().where({ id: report!.id }).first();
   const broken = await s.facilities.q().where({ id: laundry.id }).first();
   check('staff update the status, reply and mark the facility out of order', updated?.status === 'in_progress' && updated.staffNote === 'Technician on Monday' && broken?.outOfOrder === true);
-  const residentView = await http('GET', host, '/book/report', { cookie: c1 });
+  const residentView = await http('GET', host, '/booking/report', { cookie: c1 });
   check('resident sees the new status and reply', residentView.body.includes('Technician on Monday') && residentView.body.includes('In progress'));
   const blocked = await book(c1, laundry.id, at(addDays(tomorrow, 2), 12));
   check('an out-of-order facility cannot be booked', param(blocked.location, 'error') === 'outOfOrder', blocked.location);
   await s.facilities.q().where({ id: laundry.id }).update({ outOfOrder: false, outOfOrderNote: null });
   await s.contacts.create({ title: 'Maintenance', phone: '+358 40 000 0000', emergency: true });
   await s.help.create({ title: 'Laundry rules', body: 'Be nice.', locale: 'en' });
-  for (const [path, text] of [['/book/contact', 'Maintenance'], ['/book/help', 'Laundry rules'], ['/book/mine', 'My bookings']] as const) {
+  for (const [path, text] of [['/booking/contact', 'Maintenance'], ['/booking/help', 'Laundry rules'], ['/booking/mine', 'My bookings']] as const) {
     const res = await http('GET', host, path, { cookie: c1 });
     check(`resident page ${path} shows its content`, res.status === 200 && res.body.includes(text), String(res.status));
   }
@@ -333,7 +333,7 @@ try {
   check('the way back signs the admin in on Kellona and opens the organizations list', homeUrl.hostname === 'localhost' && landed.location.endsWith('/platform') && Boolean(landed.cookie), `${home.location} -> ${landed.location}`);
 
   // Cross organization: a resident session does not work on another organization.
-  const cross = await http('GET', 'demo-north.localhost', '/book', { cookie: c1 });
+  const cross = await http('GET', 'demo-north.localhost', '/booking', { cookie: c1 });
   check('resident session rejected on another organization', cross.status === 307, String(cross.status));
 
   // Reminders.
@@ -351,7 +351,7 @@ try {
   check('reminder is sent once', after2?.reminderSentAt === again?.reminderSentAt);
 
   // Stop viewing as: back to admin.
-  const stop = await http('POST', host, '/book', { cookie: c1, form: { [actionIn(hub1.body, 'Back to admin')]: '' } });
+  const stop = await http('POST', host, '/booking', { cookie: c1, form: { [actionIn(hub1.body, 'Back to admin')]: '' } });
   check('stop viewing as returns to admin', stop.location.endsWith('/manage/booking') && Boolean(stop.cookie), stop.location);
 } finally {
   await db.orm.public.Organization.where({ id: org.id }).delete();

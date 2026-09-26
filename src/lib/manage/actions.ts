@@ -13,7 +13,7 @@ const str = (formData: FormData, name: string, max = 120) => String(formData.get
 
 function toBuilding(buildingId: string, anchor = ''): never {
   revalidatePath('/manage');
-  revalidatePath('/book');
+  revalidatePath('/booking');
   redirect(`/manage/b/${buildingId}${anchor}`);
 }
 

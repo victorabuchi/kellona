@@ -557,7 +557,7 @@
   padding: 5px;
   background: #fff;
   border: 1px solid var(--k-line);
-  border-radius: 999px;
+  border-radius: 10px;
   box-shadow: 0 12px 32px rgba(20, 24, 31, 0.12);
   max-width: calc(100vw - 32px);
   overflow-x: auto;
@@ -573,7 +573,7 @@
   font-weight: 700;
   font-size: 14px;
   padding: 9px 16px;
-  border-radius: 999px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
@@ -767,7 +767,7 @@
   width: max-content;
   max-width: 100%;
   background: var(--k-soft);
-  border-radius: 999px;
+  border-radius: 10px;
 }
 
 .tab {
@@ -778,7 +778,7 @@
   font-size: 14px;
   color: var(--k-muted);
   padding: 9px 18px;
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
@@ -915,7 +915,7 @@
   font-size: 13px;
   color: var(--k-muted);
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
 }
 

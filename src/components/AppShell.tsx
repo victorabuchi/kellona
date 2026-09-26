@@ -59,13 +59,13 @@ function navFor(viewer: Viewer, org: OrgContext | null, platformUrl: string): Na
     return {
       sections: [
         [
-          { href: '/book', label: 'nav.book', icon: 'book' },
-          { href: '/book/mine', label: 'nav.myBookings', icon: 'list' },
+          { href: '/booking', label: 'nav.book', icon: 'book' },
+          { href: '/booking/mine', label: 'nav.myBookings', icon: 'list' },
         ],
         [
-          { href: '/book/report', label: 'nav.report', icon: 'alert' },
-          { href: '/book/contact', label: 'nav.contact', icon: 'phone' },
-          { href: '/book/help', label: 'nav.help', icon: 'help' },
+          { href: '/booking/report', label: 'nav.report', icon: 'alert' },
+          { href: '/booking/contact', label: 'nav.contact', icon: 'phone' },
+          { href: '/booking/help', label: 'nav.help', icon: 'help' },
         ],
       ],
       bottom: [account],
@@ -156,7 +156,7 @@ const CHEVRONS = (
 
 function SideItem({ item, active, t, className }: { item: Item; active: string; t: T; className: string }) {
   // Hubs (/book, /manage) only light up on themselves; their sub pages have their own items.
-  const current = !item.external && (active === item.href || (item.href !== '/manage' && item.href !== '/book' && active.startsWith(`${item.href}/`)));
+  const current = !item.external && (active === item.href || (item.href !== '/manage' && item.href !== '/booking' && active.startsWith(`${item.href}/`)));
   const body = (
     <>
       <Icon name={item.icon} />

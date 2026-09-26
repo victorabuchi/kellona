@@ -13,7 +13,7 @@ import Flash from '../../../components/Flash';
 
 export const metadata: Metadata = { title: 'Report a problem' };
 
-export default async function ReportPage({ searchParams }: PageProps<'/book/report'>) {
+export default async function ReportPage({ searchParams }: PageProps<'/booking/report'>) {
   const sp = await searchParams;
   const { org, scope, viewer } = await requireResident();
   const { t, locale } = await getT(org);
@@ -26,7 +26,7 @@ export default async function ReportPage({ searchParams }: PageProps<'/book/repo
   const badge = (status: string) => (status === 'done' ? shell.badgeLive : status === 'new' ? shell.badgePending : '');
 
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book/report" title={t('report.title')}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking/report" title={t('report.title')}>
       <p className={styles.lede}>{t('report.lede')}</p>
       {emergency?.phone && (
         <a className={shell.emergency} href={`tel:${emergency.phone.replace(/[^+\d]/g, '')}`}>

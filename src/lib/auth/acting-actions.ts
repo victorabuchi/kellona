@@ -14,7 +14,7 @@ export async function actAsResidentAction(formData: FormData) {
   const resident = await access.scope.residents.q().where({ id: residentId, status: 'active' }).first();
   if (!resident) redirect('/manage/residents');
   await createSession({ kind: 'resident', orgId: access.org.id, residentId: resident.id, by: access.viewer.id });
-  redirect('/book');
+  redirect('/booking');
 }
 
 export async function stopActingAction() {
@@ -43,5 +43,5 @@ export async function openBookingAsAdminAction(formData: FormData) {
     ? ((await scope.residents.q().where({ id: existing.id }).update({ unitId: unit.id, status: 'active', name: viewer.name })) ?? existing)
     : await scope.residents.create({ name: viewer.name, email: viewer.email, unitId: unit.id, externalRef: 'kellona-admin-test' });
   await createSession({ kind: 'resident', orgId: org.id, residentId: resident.id, by: viewer.id });
-  redirect('/book');
+  redirect('/booking');
 }

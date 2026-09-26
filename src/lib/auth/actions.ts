@@ -136,7 +136,7 @@ export async function consumeLinkAction(formData: FormData) {
   const resident = await scope.residents.q().where({ email: row.email, status: 'active' }).first();
   if (resident) {
     await createSession({ kind: 'resident', orgId: org.id, residentId: resident.id });
-    redirect('/book');
+    redirect('/booking');
   }
   const staff = await scope.staff.q().where({ email: row.email }).first();
   if (!staff) back({ error: 'link' }, org);

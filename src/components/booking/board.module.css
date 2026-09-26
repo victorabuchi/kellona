@@ -26,7 +26,7 @@
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--surface);
   font-size: 13px;
   font-weight: 600;
@@ -95,7 +95,7 @@
 
 .meter {
   height: 8px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--surface-2);
   overflow: hidden;
 }
@@ -103,7 +103,7 @@
 .meter span {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--brand);
   transition: width 0.3s;
 }
@@ -239,7 +239,7 @@
   min-width: 34px;
   height: 34px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--brand);
   color: var(--on-brand);
 }
@@ -380,7 +380,7 @@
   display: inline-block;
   margin-top: 6px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
   background: var(--brand-tint);
@@ -691,7 +691,7 @@
   width: 44px;
   height: 26px;
   margin: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--border);
   cursor: pointer;
   transition: background 0.15s;
@@ -704,7 +704,7 @@
   left: 3px;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 6px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(15, 17, 20, 0.3);
   transition: transform 0.15s;
@@ -861,7 +861,7 @@
   height: 36px;
   padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text);
   font: inherit;
@@ -944,7 +944,7 @@
   align-self: center;
   width: 40px;
   height: 5px;
-  border-radius: 999px;
+  border-radius: 3px;
   background: var(--border);
   margin-top: -8px;
 }

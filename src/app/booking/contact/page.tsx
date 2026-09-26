@@ -16,7 +16,7 @@ export default async function ContactPage() {
   const sorted = [...contacts.filter((c) => c.emergency), ...contacts.filter((c) => !c.emergency)];
   const tel = (p: string) => `tel:${p.replace(/[^+\d]/g, '')}`;
   return (
-    <AppShell org={org} viewer={viewer} t={t} active="/book/contact" title={t('contact.title')}>
+    <AppShell org={org} viewer={viewer} t={t} active="/booking/contact" title={t('contact.title')}>
       <p className={styles.lede}>{t('contact.lede')}</p>
       {sorted.length === 0 ? (
         <p className={styles.empty}>{t('contact.none')}</p>
@@ -51,7 +51,7 @@ export default async function ContactPage() {
           ))}
         </div>
       )}
-      <Link href="/book/report" className={shell.ghost} style={{ alignSelf: 'flex-start' }}>
+      <Link href="/booking/report" className={shell.ghost} style={{ alignSelf: 'flex-start' }}>
         {t('contact.reportInstead')}
       </Link>
     </AppShell>

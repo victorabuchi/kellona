@@ -42,9 +42,9 @@ try {
   await wait(4000);
   const title = await b.eval<string>('document.title');
   const body = await b.eval<string>('document.body.innerText');
-  check('Open booking shows the booking hub in the organization', (await b.eval<string>('location.href')).endsWith('/book') && !title.includes('Kellona') && !body.includes('404'), `${title} ${body.slice(0, 80)}`);
+  check('Open booking shows the booking hub in the organization', (await b.eval<string>('location.href')).endsWith('/booking') && !title.includes('Kellona') && !body.includes('404'), `${title} ${body.slice(0, 80)}`);
 
-  const facility = await b.eval<string>(`document.querySelector('a[href^="/book/f/"]')?.href ?? ''`);
+  const facility = await b.eval<string>(`document.querySelector('a[href^="/booking/f/"]')?.href ?? ''`);
   await b.goto(facility);
   await wait(2000);
   check('facility board loads', (await b.eval<boolean>(`Boolean(document.querySelector('[role=grid]'))`)), facility);

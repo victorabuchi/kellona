@@ -12,7 +12,7 @@ function escape(text: string): string {
 }
 
 // One booking as an .ics file, for the booker and accepted guests.
-export async function GET(_request: Request, ctx: RouteContext<'/book/ics/[bookingId]'>) {
+export async function GET(_request: Request, ctx: RouteContext<'/booking/ics/[bookingId]'>) {
   const { bookingId } = await ctx.params;
   const org = await getCurrentOrg();
   const viewer = await getViewer();

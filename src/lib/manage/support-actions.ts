@@ -29,7 +29,7 @@ export async function updateReportAction(formData: FormData) {
     await notifyResident(org, scope, report.residentId, {
       title: m['nav.report'],
       body: `${m[`report.status.${next}` as 'report.status.new']}${note ? `: ${note}` : ''}`,
-      url: '/book/report',
+      url: '/booking/report',
     }).catch(() => 'none');
   }
   revalidatePath('/manage/reports');
@@ -43,7 +43,7 @@ export async function setOutOfOrderAction(formData: FormData) {
   if (!canSeeBuilding(access, buildingId)) redirect('/manage');
   const on = formData.get('on') === '1';
   await access.scope.facilities.q().where({ id, buildingId }).update({ outOfOrder: on, outOfOrderNote: on ? str(formData, 'note', 240) || null : null });
-  revalidatePath('/book');
+  revalidatePath('/booking');
   redirect(`/manage/b/${buildingId}#facilities`);
 }
 

@@ -14,9 +14,9 @@ export async function sendReportAction(formData: FormData) {
   const rawCategory = String(formData.get('category') ?? 'broken');
   const category = (REPORT_CATEGORIES as readonly string[]).includes(rawCategory) ? rawCategory : 'other';
   const facilityId = String(formData.get('facilityId') ?? '');
-  if (message.length < 3) redirect('/book/report?error=1');
+  if (message.length < 3) redirect('/booking/report?error=1');
   const facility = facilityId && ctx ? await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first() : null;
   await scope.reports.create({ residentId: viewer.id, facilityId: facility?.id ?? null, buildingId: ctx?.buildingId ?? null, category, message });
-  revalidatePath('/book/report');
-  redirect('/book/report?sent=1');
+  revalidatePath('/booking/report');
+  redirect('/booking/report?sent=1');
 }

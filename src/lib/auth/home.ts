@@ -1,6 +1,6 @@
 // Where each kind of user starts after signing in.
 export function homeFor(kind: 'admin' | 'resident' | 'staff', hasOrg: boolean): string {
-  if (kind === 'resident') return '/book';
+  if (kind === 'resident') return '/booking';
   if (kind === 'staff') return '/manage/overview';
   return hasOrg ? '/manage/overview' : '/platform';
 }

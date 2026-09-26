@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         const resident = await scope.residents.q().where({ id: residentId }).first();
         const locale = resident?.locale === 'en' || (!resident?.locale && org.defaultLocale === 'en') ? 'en' : 'fi';
         const body = MESSAGES[locale]['reminder.body'].replace('{name}', b.facility!.name).replace('{time}', fmtTime(b.startsAt, locale, org.timezone));
-        await notifyResident(org, scope, residentId, { title: b.facility!.name, body, url: '/book' }).catch(() => 'none');
+        await notifyResident(org, scope, residentId, { title: b.facility!.name, body, url: '/booking' }).catch(() => 'none');
       }
       reminded += 1;
     }
