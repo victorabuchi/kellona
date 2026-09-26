@@ -1,20 +1,51 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import AppShell from '../../../../components/AppShell';
-import BookingPanel from '../../../../components/BookingPanel';
-import styles from '../../../../components/app.module.css';
+import BookingBoard, { type BoardDay, type BoardSlot } from '../../../../components/booking/BookingBoard';
+import app from '../../../../components/app.module.css';
+import styles from '../../../../components/booking/board.module.css';
 import { requireResident } from '../../../../lib/auth/access';
 import { getT } from '../../../../lib/i18n';
 import { loadAmenities, loadNeighbours, residentContext, type FacilityRow } from '../../../../lib/booking/engine';
-import { isAmenityKind, isSpaceKind, limitIsPerKind } from '../../../../lib/booking/kinds';
-import { lengthOptions, startHours, turnHours, overlaps } from '../../../../lib/booking/rules';
+import { isAmenityKind, isSpaceKind, limitIsPerKind, MAX_REPEAT_WEEKS } from '../../../../lib/booking/kinds';
+import { cancelDeadline, canCancel, hoursInWeek, lengthOptions, overlaps, startHours, turnHours } from '../../../../lib/booking/rules';
 import { addDays, at, dayStart, formatDay, hh, nowMs, parseDay, weekStart } from '../../../../lib/booking/time';
-import { fmtDayLong, fmtWeekday } from '../../../../lib/booking/format';
+import { fmtWhen } from '../../../../lib/booking/format';
 import { bookAction, cancelBookingAction } from '../../../../lib/booking/actions';
 import type { MessageKey } from '../../../../lib/i18n/messages';
 
-const ERRORS = ['invalid', 'past', 'tooFar', 'closed', 'tooLong', 'taken', 'weekly', 'capacity', 'outsider', 'notAvailable', 'notFound'];
+const ERRORS = ['invalid', 'past', 'tooFar', 'closed', 'tooLong', 'taken', 'weekly', 'capacity', 'outsider', 'notAvailable', 'notFound', 'tooLate'];
 
+// ISO 8601 week number, from local date parts.
+function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+}
+
+function Rule({ d, text }: { d: string; text: string }) {
+  return (
+    <span className={styles.rule}>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={d} />
+      </svg>
+      {text}
+    </span>
+  );
+}
+
+const ICON = {
+  door: 'M3 21h18M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17M15 12h.01',
+  clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 6v6l4 2',
+  cal: 'M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
+  undo: 'M3 7v6h6M3 13a9 9 0 1 0 3-6.7L3 9',
+  gauge: 'M12 14l4-4M3.3 17a10 10 0 1 1 17.4 0',
+};
+
+// Booking page for one facility: rules at a glance, weekly usage, and a week
+// board where hovering previews a time and tapping it books or cancels.
 export default async function FacilityPage({ params, searchParams }: PageProps<'/book/f/[facilityId]'>) {
   const { facilityId } = await params;
   const sp = await searchParams;
@@ -24,154 +55,243 @@ export default async function FacilityPage({ params, searchParams }: PageProps<'
   const { t, locale } = await getT(org);
   const ctx = await residentContext(scope, viewer.id);
   if (!ctx) redirect('/book');
-  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as FacilityRow | null;
+  const facility = (await scope.facilities.q().where({ id: facilityId, buildingId: ctx.buildingId }).first()) as (FacilityRow & { cancelCutoffMinutes: number }) | null;
   if (!facility || !isAmenityKind(facility.kind) || facility.kind === 'parking') redirect('/book');
   const amenities = await loadAmenities(scope, ctx.buildingId, ctx.unitId);
   if (!amenities.find((a) => a.kind === facility.kind)?.available) redirect('/book');
 
   const now = nowMs();
   const today = dayStart(new Date(now));
-  const lastDay = dayStart(addDays(new Date(now), facility.advanceDays));
-  const day = parseDay(one('day'), new Date(now));
-  const dayParam = formatDay(day);
-  const week = weekStart(day);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
+  const selected = parseDay(one('day'), new Date(now));
+  const week = weekStart(selected);
+  const weekEnd = addDays(week, 7);
   const base = `/book/f/${facility.id}`;
-  const href = (p: Record<string, string>) => `${base}?${new URLSearchParams(p).toString()}`;
+  const href = (day: Date) => `${base}?day=${formatDay(day)}`;
+  const tag = locale === 'fi' ? 'fi-FI' : 'en-GB';
 
+  const limitIds = limitIsPerKind(facility.kind)
+    ? (await scope.facilities.q().where({ buildingId: ctx.buildingId, kind: facility.kind }).all()).map((f) => f.id)
+    : [facility.id];
   const siblings = limitIsPerKind(facility.kind)
     ? await scope.facilities.q().where({ buildingId: ctx.buildingId, kind: facility.kind }).orderBy((f) => f.name.asc()).all()
     : [];
-
-  const from = day.toISOString();
-  const to = addDays(day, 1).toISOString();
-  const bookings = await scope.bookings
-    .q()
-    .where({ facilityId: facility.id })
-    .where((b) => b.startsAt.lt(to))
-    .where((b) => b.endsAt.gt(from))
-    .all();
+  const [bookings, mineWindow, people] = await Promise.all([
+    scope.bookings
+      .q()
+      .where({ facilityId: facility.id })
+      .where((b) => b.startsAt.lt(weekEnd.toISOString()))
+      .where((b) => b.endsAt.gt(week.toISOString()))
+      .all(),
+    scope.bookings
+      .q()
+      .where({ residentId: ctx.residentId })
+      .where((b) => b.facilityId.in(limitIds))
+      .where((b) => b.endsAt.gte(new Date(now - 8 * 86_400_000).toISOString()))
+      .orderBy((b) => b.startsAt.asc())
+      .all(),
+    facility.capacity > 1 ? loadNeighbours(scope, ctx) : Promise.resolve({ roommates: [], others: [] }),
+  ]);
 
   const turns = turnHours(facility);
   const slotLen = turns ? facility.slotHours : 1;
-  const slots = startHours(facility).map((h) => {
-    const start = at(day, h);
-    const end = new Date(start);
-    end.setHours(end.getHours() + slotLen);
-    const booking = bookings.find((b) => overlaps(start.getTime(), end.getTime(), new Date(b.startsAt).getTime(), new Date(b.endsAt).getTime()));
-    const past = start.getTime() < now;
-    const beyond = start.getTime() > addDays(new Date(now), facility.advanceDays).getTime();
-    return { h, start, end, booking, closed: past || beyond };
+  const lastBookable = addDays(new Date(now), facility.advanceDays).getTime();
+  const starts = startHours(facility);
+  const days: BoardDay[] = Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(week, i);
+    const slots: BoardSlot[] = starts.map((h) => {
+      const start = at(day, h);
+      const end = new Date(start);
+      end.setHours(end.getHours() + slotLen);
+      const booking = bookings.find((b) => overlaps(start.getTime(), end.getTime(), new Date(b.startsAt).getTime(), new Date(b.endsAt).getTime()));
+      const closed = start.getTime() < now || start.getTime() > lastBookable;
+      const state: BoardSlot['state'] = booking ? (booking.residentId === viewer.id ? 'mine' : 'taken') : closed ? 'closed' : 'free';
+      const busyAfter = bookings.map((b) => new Date(b.startsAt).getTime()).filter((ms) => ms > start.getTime());
+      const lengths = state === 'free' ? lengthOptions(facility, h).filter((n) => busyAfter.every((ms) => start.getTime() + n * 3_600_000 <= ms)) : [];
+      return {
+        start: start.toISOString(),
+        label: hh(h),
+        endLabel: hh(h + slotLen),
+        state,
+        bookingId: state === 'mine' ? booking!.id : undefined,
+        cancellable: state === 'mine' ? canCancel(booking!.startsAt, facility.cancelCutoffMinutes, now) : undefined,
+        deadlineLabel:
+          state === 'mine' ? cancelDeadline(booking!.startsAt, facility.cancelCutoffMinutes).toLocaleString(tag, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : undefined,
+        lengths: lengths.length ? lengths : [slotLen],
+      };
+    });
+    return {
+      key: formatDay(day),
+      weekday: day.toLocaleDateString(tag, { weekday: 'short' }),
+      date: `${day.getDate()}.${day.getMonth() + 1}.`,
+      longLabel: day.toLocaleDateString(tag, { weekday: 'long', day: 'numeric', month: 'long' }),
+      isToday: day.getTime() === today.getTime(),
+      slots,
+    };
   });
-
-  // The picked slot opens the booking panel.
-  const pick = one('pick');
-  const picked = slots.find((s) => s.start.toISOString() === pick && !s.booking && !s.closed);
-  let panel: React.ReactNode = null;
-  if (picked) {
-    const nextBusy = bookings.map((b) => new Date(b.startsAt).getTime()).filter((ms) => ms > picked.start.getTime());
-    const lengths = lengthOptions(facility, picked.h).filter((n) => nextBusy.every((ms) => picked.start.getTime() + n * 3_600_000 <= ms));
-    const people = facility.capacity > 1 ? await loadNeighbours(scope, ctx) : { roommates: [], others: [] };
-    const endHour = picked.h + (turns ? facility.slotHours : lengths[0] ?? 1);
-    panel = (
-      <BookingPanel
-        action={bookAction}
-        hidden={{ facilityId: facility.id, day: dayParam, startsAt: picked.start.toISOString() }}
-        whenLabel={`${fmtDayLong(day, locale)} ${hh(picked.h)}${turns ? `-${hh(endHour)}` : ''}`}
-        lengths={lengths.length ? lengths : [1]}
-        capacity={facility.capacity}
-        roommates={people.roommates}
-        others={people.others}
-        closeHref={href({ day: dayParam })}
-        withNote={isSpaceKind(facility.kind)}
-        t={t}
-      />
-    );
-  }
+  const hours = starts.map((h) => hh(h));
+  const usedHours = hoursInWeek(
+    mineWindow.map((b) => ({ start: new Date(b.startsAt).getTime(), end: new Date(b.endsAt).getTime(), residentId: b.residentId })),
+    ctx.residentId,
+    selected < today ? today : selected,
+  );
+  const next = mineWindow.find((b) => b.facilityId === facility.id && new Date(b.endsAt).getTime() > now);
+  const selectedIndex = Math.max(0, days.findIndex((d) => d.key === formatDay(selected < today ? today : selected)));
 
   const error = ERRORS.find((e) => e === one('error'));
-  const rules = turns
-    ? t('book.rulesTurns', { len: facility.slotHours, week: facility.maxHoursPerWeek, days: facility.advanceDays })
-    : t('book.rules', { max: facility.maxHoursPerBooking, week: facility.maxHoursPerWeek, days: facility.advanceDays });
+  const flash = one('ok') ? t('board.done') : '';
 
   return (
     <AppShell org={org} viewer={viewer} t={t} active="/book" title={siblings.length > 1 ? t(`kind.${facility.kind}` as MessageKey) : facility.name}>
-      <Link href="/book" className={styles.muted}>
-        {t('book.allFacilities')}
-      </Link>
+      <div className={styles.hero}>
+        <span className={styles.eyebrow}>{ctx.buildingName}</span>
+        <Link href="/book" className={app.muted}>
+          {t('book.allFacilities')}
+        </Link>
+      </div>
+
       {siblings.length > 1 && (
-        <nav className={styles.chips}>
+        <nav className={app.chips}>
           {siblings.map((s) => (
-            <Link key={s.id} href={`/book/f/${s.id}?day=${dayParam}`} className={styles.chip} aria-current={s.id === facility.id}>
+            <Link key={s.id} href={`/book/f/${s.id}?day=${formatDay(selected)}`} className={app.chip} aria-current={s.id === facility.id}>
               {s.name}
             </Link>
           ))}
         </nav>
       )}
-      <p className={styles.lede}>{facility.description ? `${facility.description} ` : ''}{rules}</p>
 
-      {error && <p className={styles.alert}>{t(`book.error.${error}` as MessageKey)}</p>}
-      {one('ok') && <p className={styles.ok}>{t('book.booked')}</p>}
-      {one('skipped') && <p className={styles.alert}>{t('book.skipped', { n: one('skipped') })}</p>}
-
-      <div className={styles.weekNav}>
-        <Link className={styles.btnGhost} href={href({ day: formatDay(addDays(week, -7)) })} aria-label={t('book.prevWeek')}>
-          &lsaquo;
-        </Link>
-        <Link className={styles.btnGhost} href={href({ day: formatDay(today) })}>
-          {t('book.today')}
-        </Link>
-        <Link className={styles.btnGhost} href={href({ day: formatDay(addDays(week, 7)) })} aria-label={t('book.nextWeek')}>
-          &rsaquo;
-        </Link>
+      <div className={styles.rules}>
+        {turns ? (
+          <Rule d={ICON.clock} text={t('board.turns', { hours: turns.map((h) => hh(h)).join(', ') })} />
+        ) : (
+          <>
+            <Rule d={ICON.door} text={t('board.open', { from: hh(facility.openHour), to: hh(facility.closeHour) })} />
+            <Rule d={ICON.clock} text={t('board.slot', { n: facility.maxHoursPerBooking === 1 ? 1 : `1-${facility.maxHoursPerBooking}` })} />
+          </>
+        )}
+        <Rule d={ICON.cal} text={t('board.ahead', { n: facility.advanceDays })} />
+        <Rule d={ICON.undo} text={facility.cancelCutoffMinutes ? t('board.cancelRule', { n: facility.cancelCutoffMinutes }) : t('board.anytime')} />
+        <Rule d={ICON.gauge} text={t('board.weekly', { n: facility.maxHoursPerWeek })} />
       </div>
-      <nav className={styles.days}>
-        {days.map((d) => (
-          <Link
-            key={d.getTime()}
-            href={href({ day: formatDay(d) })}
-            className={styles.day}
-            aria-current={d.getTime() === day.getTime()}
-            data-off={d < today || d > lastDay}
-          >
-            <span>{fmtWeekday(d, locale)}</span>
-            <strong>{d.getDate()}</strong>
-          </Link>
-        ))}
-      </nav>
+      {facility.description && (
+        <details className={styles.info}>
+          <summary>{t('board.rules')}</summary>
+          <p>{facility.description}</p>
+        </details>
+      )}
 
-      <h2 className={styles.h2}>{fmtDayLong(day, locale)}</h2>
-      {panel}
-      <ul className={styles.list}>
-        {slots.map((s) => {
-          const mine = s.booking?.residentId === viewer.id;
-          const isPicked = picked?.h === s.h;
-          return (
-            <li key={s.h} className={`${styles.slot} ${mine ? styles.slotMine : ''} ${isPicked ? styles.slotPicked : ''}`}>
-              <span className={styles.slotTime}>
-                {hh(s.h)}
-                {turns ? `-${hh(s.h + facility.slotHours)}` : ''}
-              </span>
-              {mine ? (
-                <form action={cancelBookingAction} className={styles.actions}>
-                  <span className={styles.badge}>{t('book.slotMine')}</span>
-                  <input type="hidden" name="bookingId" value={s.booking!.id} />
-                  <input type="hidden" name="returnTo" value={href({ day: dayParam })} />
-                  <button className={styles.btnDanger}>{t('book.cancel')}</button>
-                </form>
-              ) : s.booking ? (
-                <span className={styles.badge}>{t('book.slotTaken')}</span>
-              ) : s.closed ? (
-                <span className={styles.badge}>{t('book.slotPast')}</span>
-              ) : (
-                <Link className={styles.btn} href={`${href({ day: dayParam, pick: s.start.toISOString() })}#panel`}>
-                  {t('book.slotFree')}
-                </Link>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <div className={styles.panelRow}>
+        <div className={styles.usage}>
+          <div className={styles.usageTop}>
+            <span>{t('board.usage')}</span>
+            <strong>{t('board.usageValue', { used: usedHours, max: facility.maxHoursPerWeek })}</strong>
+          </div>
+          <div className={styles.meter}>
+            <span style={{ width: `${Math.min(100, (usedHours / facility.maxHoursPerWeek) * 100)}%` }} />
+          </div>
+        </div>
+        {next && (
+          <div className={styles.next}>
+            <span className={app.muted}>{t('board.nextBooking')}</span>
+            <span className={styles.nextWhen}>{fmtWhen(next.startsAt, locale, org.timezone)}</span>
+          </div>
+        )}
+      </div>
+
+      {error && <p className={app.alert}>{t(`book.error.${error}` as MessageKey)}</p>}
+      {one('skipped') && <p className={app.alert}>{t('book.skipped', { n: one('skipped') })}</p>}
+
+      <div className={styles.toolbar}>
+        <div className={styles.weekNav}>
+          <Link className={styles.navBtn} href={href(addDays(week, -7))} aria-label={t('book.prevWeek')}>
+            &lsaquo;
+          </Link>
+          <span className={styles.weekLabel}>
+            {t('board.week', { n: isoWeek(week) })} · {week.getDate()}.{week.getMonth() + 1}.-{addDays(week, 6).getDate()}.{addDays(week, 6).getMonth() + 1}.
+          </span>
+          <Link className={styles.navBtn} href={href(addDays(week, 7))} aria-label={t('book.nextWeek')}>
+            &rsaquo;
+          </Link>
+          <Link className={styles.navBtn} href={href(today)}>
+            {t('board.today')}
+          </Link>
+        </div>
+        <div className={styles.legend}>
+          <span>
+            <i className={`${styles.swatch} ${styles.sFree}`} />
+            {t('board.free')}
+          </span>
+          <span>
+            <i className={`${styles.swatch} ${styles.sTaken}`} />
+            {t('board.booked')}
+          </span>
+          <span>
+            <i className={`${styles.swatch} ${styles.sMine}`} />
+            {t('board.yours')}
+          </span>
+        </div>
+      </div>
+
+      <BookingBoard
+        days={days}
+        hours={hours}
+        facility={{
+          id: facility.id,
+          name: facility.name,
+          place: ctx.buildingName,
+          capacity: facility.capacity,
+          withNote: isSpaceKind(facility.kind),
+          maxRepeat: MAX_REPEAT_WEEKS,
+        }}
+        usage={{ used: usedHours, max: facility.maxHoursPerWeek }}
+        people={people}
+        dayParam={formatDay(selected)}
+        returnTo={`${base}?day=${formatDay(selected)}`}
+        initialDay={selectedIndex}
+        labels={{
+          free: t('board.free'),
+          booked: t('board.booked'),
+          yours: t('board.yours'),
+          closed: t('board.closed'),
+          confirmTitle: t('board.confirmTitle'),
+          reserve: t('board.reserve'),
+          close: t('board.close'),
+          takenTitle: t('board.takenTitle'),
+          takenBody: t('board.takenBody'),
+          mineTitle: t('board.mineTitle'),
+          cancelBooking: t('board.cancelBooking'),
+          hoverBook: t('board.hoverBook'),
+          hoverMine: t('board.hoverMine'),
+          hoverTaken: t('board.hoverTaken'),
+          addCal: t('board.addCal'),
+          repeat: t('book.repeat'),
+          once: t('book.once'),
+          length: t('book.length'),
+          note: t('book.note'),
+          notePlaceholder: t('book.notePlaceholder'),
+          group: t('book.group'),
+          groupLede: t('book.groupLede', { n: facility.capacity }),
+          inviteApartment: t('book.inviteApartment'),
+          yourApartment: t('book.yourApartment'),
+          otherResidents: t('book.otherResidents'),
+          apt: t('book.apt'),
+          limitReached: t('board.limitReached'),
+          weeksN: t('book.weeks', { n: '{n}' }),
+          hoursN: t('book.hours', { n: '{n}' }),
+          after: t('board.after', { n: '{n}', max: '{max}' }),
+          cancelUntil: t('board.cancelUntil', { time: '{time}' }),
+          cancelClosed: t('board.cancelClosed', { time: '{time}' }),
+        }}
+        bookAction={bookAction}
+        cancelAction={cancelBookingAction}
+      />
+      {flash && (
+        <div className={styles.toast} role="status">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {flash}
+        </div>
+      )}
     </AppShell>
   );
 }
