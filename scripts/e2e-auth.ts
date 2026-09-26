@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { db } from '../src/prisma/db';
 import { orgScope } from '../src/lib/tenant/scope';
 import { hashPassword } from '../src/lib/auth/password';
+import { actionIn } from './lib/http';
 
 const BASE = { hostname: '127.0.0.1', port: 3000 };
 const adminEmail = process.env['E2E_ADMIN_EMAIL'] ?? '';
@@ -82,7 +83,7 @@ try {
   // 1. Super-admin with password.
   if (adminEmail && adminPassword) {
     const res = await http('POST', 'demo-north.localhost', '/', { form: { [passwordAction!]: '', email: adminEmail, password: adminPassword } });
-    check('admin password sign-in redirects to /account', res.status === 303 && res.location.endsWith('/account') && Boolean(res.cookie), `${res.status} ${res.location}`);
+    check('admin password sign-in lands on /manage', res.status === 303 && res.location.endsWith('/manage') && Boolean(res.cookie), `${res.status} ${res.location}`);
     const account = await http('GET', 'demo-north.localhost', '/account', { cookie: res.cookie! });
     check('admin account page shows super-admin role', account.status === 200 && (account.body.includes('super-admin') || account.body.includes('pääkäyttäjä')));
     const platform = await http('GET', 'demo-north.localhost', '/platform', { cookie: res.cookie! });
@@ -119,7 +120,7 @@ try {
   const verify = await http('GET', scratchHost, `/auth/verify?token=${token}`);
   const [consume] = actionIds(verify.body);
   const used = await http('POST', scratchHost, '/auth/verify', { form: { [consume!]: '', token } });
-  check('link signs the resident in', used.status === 303 && used.location.endsWith('/account') && Boolean(used.cookie), `${used.status} ${used.location}`);
+  check('link signs the resident in and lands on /book', used.status === 303 && used.location.endsWith('/book') && Boolean(used.cookie), `${used.status} ${used.location}`);
   const again = await http('POST', scratchHost, '/auth/verify', { form: { [consume!]: '', token } });
   check('link works only once', again.location.includes('error=link'), again.location);
 
@@ -137,8 +138,7 @@ try {
 
   // 7. Sign out.
   const acct = await http('GET', scratchHost, '/account', { cookie: used.cookie ?? '' });
-  // Account page forms in order: sign out, then the language switcher.
-  const signOut = actionIds(acct.body)[0];
+  const signOut = acct.body.includes('Kirjaudu ulos') ? actionIn(acct.body, 'Kirjaudu ulos') : actionIn(acct.body, 'Sign out');
   const out = await http('POST', scratchHost, '/account', { cookie: used.cookie ?? '', form: { [signOut!]: '' } });
   check('sign out clears the session cookie', out.status === 303 && out.location.endsWith('/'));
 } finally {
