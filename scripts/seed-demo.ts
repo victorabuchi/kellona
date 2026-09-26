@@ -3,6 +3,7 @@
 // super-admin onboarding, never in code. Safe to run repeatedly.
 import { db } from '../src/prisma/db';
 import { orgScope, type OrgScope } from '../src/lib/tenant/scope';
+import { isHostTaken } from '../src/lib/tenant/load';
 import { DEFAULT_RULES, type AmenityKind } from '../src/lib/booking/kinds';
 
 type Demo = {
@@ -79,10 +80,12 @@ for (const d of DEMOS) {
   if (current) await scope.brand.q().where({ id: current.id }).update(brand);
   else await scope.brand.create(brand);
 
+  // Demo domains are .localhost names, verified up front (no DNS to check).
   for (const host of d.domains) {
-    if (!(await db.orm.public.OrgDomain.where({ host }).first())) {
-      await scope.domains.create({ host, isPrimary: true });
-    }
+    const existing = await scope.domains.q().where({ host }).first();
+    const verified = { isPrimary: true, verificationToken: 'demo', verifiedAt: new Date().toISOString() };
+    if (existing) await scope.domains.q().where({ id: existing.id }).update(verified);
+    else if (!(await isHostTaken(host))) await scope.domains.create({ host, ...verified });
   }
   await seedBuilding(scope, d);
   console.log(`${d.slug}: ${org.id}`);

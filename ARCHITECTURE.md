@@ -31,6 +31,14 @@ Three tests hold this in place:
 
 **Platform level data.** `Organization`, `PlatformAdmin` (Kellona super-admins) and `LoginToken` (whose organization is empty for super-admins) are not organization owned and sit outside `orgScope`.
 
+## Custom domains
+
+- An organization (its managers, or a super-admin) connects a domain in Settings. It is stored as pending with a random token.
+- Kellona shows two DNS records: a `CNAME` from the domain to `KELLONA_CNAME_TARGET` (on Render, the service's onrender.com host) and a `TXT` record `_kellona.<domain>` = `kellona-verification=<token>`. Root domains use A records matching the target instead of a CNAME.
+- **Verify** looks the records up on public resolvers (`src/lib/tenant/domain-check.ts`, unit tested with a fake DNS). The TXT record proves ownership and makes the domain verified; whether it already points at Kellona is reported separately. In development `.localhost` names verify without DNS.
+- Only verified domains serve an organization, so nobody can claim another company's domain. The first verified domain becomes primary (used in links, QR codes and email); any verified domain can be made primary, and removing the primary hands the role to another verified one. Switching addresses is: connect the new one, verify, make primary, remove the old one.
+- With `RENDER_API_KEY` and `RENDER_SERVICE_ID` set, domains are also added to and removed from the Render service automatically so HTTPS certificates are issued; without them this is done in the Render dashboard.
+
 ## Sign-in
 
 - **Methods today:** password (for `AuthIdentity` rows with provider `password`, and super-admins) and a one-time email link valid for 15 minutes. Google and an organization's own OIDC or SAML are added as further `AuthIdentity` providers without schema changes.

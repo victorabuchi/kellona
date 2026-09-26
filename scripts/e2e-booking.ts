@@ -207,6 +207,34 @@ try {
   const saved = await db.orm.public.Organization.where({ id: org.id }).first();
   check('organization settings save', saved?.supportEmail === `help-${tag}@example.test`);
 
+  // Custom domains: add, verify (a .localhost name verifies in development), make primary, serve.
+  const settingsForDomains = await http('GET', host, '/manage/settings', { cookie: admin });
+  const addDomainId = actionIn(settingsForDomains.body, 'name="host"');
+  const liveHost = `booking-${tag}.localhost`;
+  const addedDomain = await http('POST', host, '/manage/settings', { cookie: admin, form: { [addDomainId]: '', host: liveHost } });
+  check('domain added as pending', addedDomain.location.includes('domain=added'), addedDomain.location);
+  const pendingRow = await s.domains.q().where({ host: liveHost }).first();
+  const beforeVerify = await http('GET', liveHost, '/');
+  check('an unverified domain does not serve the organization', !beforeVerify.body.includes('Scratch') && !pendingRow?.verifiedAt);
+  const withDomain = await http('GET', host, '/manage/settings', { cookie: admin });
+  check('settings show the DNS records to create', withDomain.body.includes(`_kellona.${liveHost}`) && withDomain.body.includes(`kellona-verification=${pendingRow?.verificationToken}`));
+  const verifyRes = await http('POST', host, '/manage/settings', { cookie: admin, form: { [actionIn(withDomain.body, 'Verify')]: '', domainId: pendingRow!.id } });
+  const verifiedRow = await s.domains.q().where({ host: liveHost }).first();
+  check('verified domain becomes primary', verifyRes.location.includes('domain=verified') && Boolean(verifiedRow?.verifiedAt) && verifiedRow?.isPrimary === true, verifyRes.location);
+  const served = await http('GET', liveHost, '/');
+  check('a verified domain serves the organization', served.status === 200 && served.body.includes('Scratch'));
+  const unprovenHost = `booking-${tag}.example.test`;
+  await http('POST', host, '/manage/settings', { cookie: admin, form: { [addDomainId]: '', host: unprovenHost } });
+  const unprovenRow = await s.domains.q().where({ host: unprovenHost }).first();
+  const afterSettings = await http('GET', host, '/manage/settings', { cookie: admin });
+  const unproven = await http('POST', host, '/manage/settings', { cookie: admin, form: { [actionIn(afterSettings.body, 'Verify')]: '', domainId: unprovenRow!.id } });
+  const unprovenAfter = await s.domains.q().where({ host: unprovenHost }).first();
+  check('a domain without the TXT record stays unverified', unproven.location.includes('domain=pending') && !unprovenAfter?.verifiedAt && unprovenAfter?.lastError === 'txt_missing', `${unproven.location} ${unprovenAfter?.lastError}`);
+  const taken = await http('POST', host, '/manage/settings', { cookie: admin, form: { [addDomainId]: '', host: 'booking.lakeside.localhost' } });
+  check("another organization's domain cannot be claimed", taken.location.includes('error=taken'), taken.location);
+  const invalid = await http('POST', host, '/manage/settings', { cookie: admin, form: { [addDomainId]: '', host: 'acme.kellona.fi' } });
+  check('Kellona addresses and invalid names are refused', invalid.location.includes('error=invalid'), invalid.location);
+
   // Back to Kellona: the platform pages move to Kellona's own address with the session.
   const platformHere = await http('GET', host, '/platform', { cookie: admin });
   check('platform page on an organization address moves to Kellona', platformHere.status === 307 && platformHere.location.startsWith('/platform/home'), platformHere.location);
