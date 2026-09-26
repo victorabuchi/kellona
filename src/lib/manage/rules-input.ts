@@ -32,5 +32,6 @@ export function readRules(formData: FormData, kind: string, base?: Rules): Rules
     maxHoursPerBooking: int(formData, 'maxHoursPerBooking', 1, 24) ?? fallback.maxHoursPerBooking,
     maxHoursPerWeek: int(formData, 'maxHoursPerWeek', 1, 168) ?? fallback.maxHoursPerWeek,
     advanceDays: int(formData, 'advanceDays', 1, 365) ?? fallback.advanceDays,
+    cancelCutoffMinutes: int(formData, 'cancelCutoffMinutes', 0, 10080) ?? fallback.cancelCutoffMinutes,
   };
 }

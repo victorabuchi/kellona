@@ -7,6 +7,7 @@ import { getT } from '../i18n';
 import { createBookings, deleteBooking, loadAmenities, residentContext, resolveParticipants, type FacilityRow } from './engine';
 import { isAmenityKind, MAX_REPEAT_WEEKS } from './kinds';
 import { notifyInvitees } from './notify';
+import { canCancel } from './rules';
 import { fmtWhen } from './format';
 
 function facilityUrl(facilityId: string, params: Record<string, string>): string {
@@ -69,24 +70,39 @@ function backTo(formData: FormData, fallback = '/book'): string {
   return to.startsWith('/book') ? to : fallback;
 }
 
+function withParam(url: string, key: string, value: string): string {
+  const [path, query = ''] = url.split('?');
+  const params = new URLSearchParams(query);
+  params.set(key, value);
+  return `${path}?${params.toString()}`;
+}
+
+// Residents cancel until the facility's cutoff; staff can always cancel.
 export async function cancelBookingAction(formData: FormData) {
   const { scope, viewer } = await requireResident();
   const bookingId = String(formData.get('bookingId') ?? '');
-  const booking = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).first();
+  const booking = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).include('facility', (f) => f).first();
+  if (booking && !canCancel(booking.startsAt, booking.facility?.cancelCutoffMinutes ?? 0, Date.now())) {
+    redirect(withParam(backTo(formData), 'error', 'tooLate'));
+  }
   if (booking) await deleteBooking(scope, booking.id);
   revalidatePath('/book');
   redirect(backTo(formData));
 }
 
-// Cancels a standing weekly turn from this week onward.
+// Cancels a standing weekly turn from this week onward. Weeks already inside
+// the cancellation cutoff stay booked.
 export async function cancelSeriesAction(formData: FormData) {
   const { scope, viewer } = await requireResident();
   const bookingId = String(formData.get('bookingId') ?? '');
-  const first = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).first();
+  const first = await scope.bookings.q().where({ id: bookingId, residentId: viewer.id }).include('facility', (f) => f).first();
   if (first?.seriesId) {
     const from = new Date(first.startsAt).getTime();
+    const cutoff = first.facility?.cancelCutoffMinutes ?? 0;
     const series = await scope.bookings.q().where({ seriesId: first.seriesId, residentId: viewer.id }).all();
-    for (const row of series) if (new Date(row.startsAt).getTime() >= from) await deleteBooking(scope, row.id);
+    for (const row of series) {
+      if (new Date(row.startsAt).getTime() >= from && canCancel(row.startsAt, cutoff, Date.now())) await deleteBooking(scope, row.id);
+    }
   }
   revalidatePath('/book');
   redirect(backTo(formData));

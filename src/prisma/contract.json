@@ -923,6 +923,13 @@
                   "kind": "scalar"
                 }
               },
+              "cancelCutoffMinutes": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "capacity": {
                 "nullable": false,
                 "type": {
@@ -1094,6 +1101,9 @@
                 },
                 "buildingId": {
                   "column": "buildingId"
+                },
+                "cancelCutoffMinutes": {
+                  "column": "cancelCutoffMinutes"
                 },
                 "capacity": {
                   "column": "capacity"
@@ -3654,6 +3664,15 @@
                   "nativeType": "uuid",
                   "nullable": false
                 },
+                "cancelCutoffMinutes": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
                 "capacity": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -5087,7 +5106,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "dc4224d61596714e942044e7976ac6bcb0f406cde72311071af03f4775faa8c1"
+    "storageHash": "9ac4fe93d4849f49f4c71d108e9755c2761908ea0bfd5bb2ec339c4eab37fd7c"
   },
   "execution": {
     "executionHash": "026946f9b336ed4bcd08c288c42dfb94fd1704326630d0a9b549488a74944001",

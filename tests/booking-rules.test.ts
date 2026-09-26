@@ -71,3 +71,14 @@ test('availability: automatic, building switch and apartment exception', () => {
   rows = resolveAmenities({}, [{ kind: 'gym', enabled: true }], []);
   assert.equal(get(rows, 'gym').available, false, 'yes without a facility is still unavailable');
 });
+
+test('cancellation cutoff', async () => {
+  const { canCancel, cancelDeadline } = await import('../src/lib/booking/rules');
+  const now = new Date(2026, 8, 28, 12, 0).getTime();
+  const start = new Date(2026, 8, 28, 14, 0);
+  assert.equal(canCancel(start, 120, now), true, 'exactly 120 min before is allowed');
+  assert.equal(canCancel(start, 121, now), false);
+  assert.equal(canCancel(start, 0, now), true);
+  assert.equal(canCancel(new Date(2026, 8, 28, 11, 0), 0, now), false, 'started bookings cannot be cancelled');
+  assert.equal(cancelDeadline(start, 120).getHours(), 12);
+});

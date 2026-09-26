@@ -60,3 +60,14 @@ export function hoursInWeek(busy: Busy[], residentId: string, start: Date): numb
     .filter((b) => b.residentId === residentId && b.start >= from && b.start < to)
     .reduce((sum, b) => sum + (b.end - b.start) / 3_600_000, 0);
 }
+
+// A booking can be cancelled until the facility's cutoff before it starts.
+export function canCancel(startsAt: string | Date, cutoffMinutes: number, now: number): boolean {
+  const start = new Date(startsAt).getTime();
+  return start - now >= Math.max(0, cutoffMinutes) * 60_000 && start > now;
+}
+
+// The moment after which a booking can no longer be cancelled.
+export function cancelDeadline(startsAt: string | Date, cutoffMinutes: number): Date {
+  return new Date(new Date(startsAt).getTime() - Math.max(0, cutoffMinutes) * 60_000);
+}

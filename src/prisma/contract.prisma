@@ -228,6 +228,8 @@ model Facility {
   maxHoursPerBooking Int               @default(2)
   maxHoursPerWeek    Int               @default(4)
   advanceDays        Int               @default(7)
+  // Bookings can be cancelled until this many minutes before they start. 0 = any time.
+  cancelCutoffMinutes Int              @default(0)
   sortOrder          Int               @default(0)
   createdAt          TimestamptzString @default(now())
   bookings           Booking[]
