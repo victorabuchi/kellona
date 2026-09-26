@@ -444,7 +444,7 @@
 .glowRow {
   display: flex;
   justify-content: center;
-  align-items: flex-end;
+  align-items: center;
   gap: 18px 26px;
   flex-wrap: wrap;
   max-width: 720px;
