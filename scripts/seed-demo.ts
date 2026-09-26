@@ -118,7 +118,43 @@ async function seedBuilding(scope: OrgScope, d: Demo) {
       await scope.facilities.create({ buildingId: building.id, kind, name: fname, description, sortOrder: i, ...DEFAULT_RULES[kind] });
     }
   }
+  await seedBookings(scope, building.id);
+
   // Apartment B 3 has no sauna, to show an apartment exception.
   const b3 = units[5]!;
   if (!(await scope.unitAmenities.q().where({ unitId: b3.id, kind: 'sauna' }).first())) await scope.unitAmenities.create({ unitId: b3.id, kind: 'sauna', enabled: false });
+}
+
+// A spread of demo bookings around today so the overview charts show
+// activity. Only added when the demo building has no bookings yet.
+async function seedBookings(scope: OrgScope, buildingId: string) {
+  const facilities = await scope.facilities.q().where({ buildingId }).all();
+  const ids = facilities.map((f) => f.id);
+  if (!ids.length || (await scope.bookings.q().where((b) => b.facilityId.in(ids)).first())) return;
+  const residents = await scope.residents.q().all();
+  const byName = (n: string) => facilities.find((f) => f.name === n);
+  const plan: Array<[string, number, number, number]> = [
+    // facility, day offset from today, hour, length
+    ['Machine 1', -6, 9, 1], ['Machine 1', -5, 18, 1], ['Machine 2', -5, 19, 1], ['Machine 1', -3, 10, 1], ['Machine 2', -3, 11, 1],
+    ['Machine 1', -2, 17, 1], ['Machine 2', -1, 20, 1], ['Machine 1', 1, 8, 1], ['Machine 2', 2, 18, 1], ['Machine 1', 3, 19, 1],
+    ['Sauna', -4, 18, 2], ['Sauna', -1, 20, 2], ['Sauna', 2, 18, 2], ['Sauna', 4, 16, 2],
+    ['Common room', -2, 18, 3], ['Common room', 3, 17, 2], ['Gym', -1, 7, 1], ['Gym', 1, 7, 1],
+  ];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (const [i, [name, offset, hour, hours]] of plan.entries()) {
+    const facility = byName(name);
+    if (!facility) continue;
+    const start = new Date(today);
+    start.setDate(start.getDate() + offset);
+    start.setHours(hour, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(end.getHours() + hours);
+    const booker = residents[i % residents.length]!;
+    const row = await scope.bookings.create({ facilityId: facility.id, residentId: booker.id, startsAt: start.toISOString(), endsAt: end.toISOString(), seriesId: name === 'Gym' ? '00000000-0000-4000-8000-000000000001' : null });
+    if (name === 'Sauna') {
+      const guest = residents[(i + 1) % residents.length]!;
+      if (guest.id !== booker.id) await scope.participants.create({ bookingId: row.id, residentId: guest.id, status: 'accepted' });
+    }
+  }
 }
