@@ -65,12 +65,24 @@ Also per organization: page title and description, favicon and theme color (`gen
 
 **Demo organizations.** `npm run seed:demo` creates two organizations marked `isDemo` with invented names, logos and colors. They exist to prove that nothing is hard coded. Real customers are created in the super-admin area.
 
-## Booking model (schema in place, flows next)
+## Booking
 
-- `Facility` is one table for every bookable thing. `kind` is `laundry`, `sauna`, `parking`, `common_room`, `gym`, `study_room` or `grill`. Rule columns (opening hours, fixed turn starts, slot length, per booking and per week limits, days ahead, capacity) are filled from per kind defaults and can be tuned per facility.
-- Availability: `BuildingAmenity` and `UnitAmenity` hold explicit yes or no per kind. No row means automatic, which is available when the building has a facility of that kind. The apartment setting wins over the building setting.
-- `Booking` (with `seriesId` for weekly standing turns), `BookingParticipant` for group bookings, `ParkingClaim` for parking spots (one per resident, one per spot).
-- `AuthIdentity` links a resident or staff member to a sign-in method (`email`, `google`, later `oidc:<name>` or `saml:<name>`), so the auth layer can grow without schema changes.
+- `Facility` is one table for every bookable thing. `kind` is `laundry`, `sauna`, `parking`, `common_room`, `gym`, `study_room` or `grill`. New facilities get the kind's default rules (`src/lib/booking/kinds.ts`), which staff can tune per facility: opening hours, fixed turn starts (sauna 16, 18, 20), turn length, hours per booking, hours per person per week, days ahead and capacity.
+- Availability (`resolveAmenities`): `BuildingAmenity` and `UnitAmenity` hold an explicit yes or no per kind. No row means automatic, which is available when the building has a facility of that kind. The apartment setting wins over the building setting.
+- All limits are checked on the server (`src/lib/booking/rules.ts`, `engine.ts`): past times, days ahead, opening hours or fixed turns, length, clashes, the weekly limit (across all machines or saunas of the building, per space for spaces), capacity, and that invitees live in the same building. A unique index on `(facilityId, startsAt)` settles races.
+- Group bookings: invite roommates, the whole apartment or others in the building. Invitees accept, decline or leave. Deleting a booking deletes its participants.
+- Weekly standing turns: up to 12 weeks, same local hour across daylight saving (server runs with `TZ=Europe/Helsinki`). The first week follows every rule; later weeks may lie beyond the booking window but still respect clashes and the weekly limit. Skipped weeks are reported. A series is cancelled from a chosen week onward.
+- Parking: `ParkingClaim`, one spot per resident and one resident per spot.
+- Reminders: `GET /api/cron/reminders` with `Authorization: Bearer $CRON_SECRET`, run hourly. Each booking is reminded once, to the booker and accepted guests, by web push (VAPID) or by email when the resident has no working push subscription.
+- Also: calendar file per booking (`/book/ics/<id>`), printable QR code per facility (`/manage/qr/<id>`) that opens its booking page on the organization's address.
+
+## Areas and roles
+
+- `/book`: residents. Hub, facility pages with a week strip and day slots, parking.
+- `/manage`: staff. Buildings, facilities and rules, amenity states, apartment exceptions, upcoming bookings, residents and CSV import. Managers and super-admins see every building, other staff only linked buildings.
+- `/platform`: super-admins. Organizations, creating one, branding (logo upload, colors with preview and a color suggested from the logo), organization details and web addresses. "Open" hands the session over to the organization's address with a one minute token, because sessions are per address.
+- Super-admins can "view as" a resident to test and support; a banner shows it and "Back to admin" restores the admin session.
+- Uploaded logos are stored as data URLs on `OrgBrand` (300 KB limit) until Supabase Storage is connected.
 
 ## Local development
 

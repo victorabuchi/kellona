@@ -15,7 +15,7 @@ npm run setup             # applies migrations and creates the two demo organiza
 npm run dev
 ```
 
-Open:
+After signing in as a super-admin, use Platform, then Open on any organization. Open:
 
 - http://demo-north.localhost:3000 (demo organization, Finnish default)
 - http://demo-lakeside.localhost:3000 (demo organization, English default)
@@ -39,6 +39,8 @@ Open:
 | `npm run setup` | Emit contract, apply migrations, seed demo organizations. Safe to rerun. |
 | `ADMIN_EMAIL=... ADMIN_NAME=... ADMIN_PASSWORD='...' npm run admin:create` | Create or update a Kellona super-admin |
 | `E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD='...' npx tsx scripts/e2e-auth.ts` | Sign-in end to end checks against the running dev server |
+| `E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD='...' TZ=Europe/Helsinki npx tsx scripts/e2e-booking.ts` | Booking, staff, import, parking and reminder checks end to end |
+| `E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD='...' npx tsx scripts/audit-mobile.ts [dir]` | Every route at 390px and 360px in headless Chrome; fails on horizontal overflow |
 | `npm run screenshot -- <url> <out.png> [width] [dark]` | Viewport screenshot in headless Chrome |
 
 ## Schema changes
