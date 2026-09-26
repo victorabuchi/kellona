@@ -23,8 +23,8 @@ const resident = (await s.residents.q().where({ email: 'aino@demo-north.example.
 await db.close();
 
 // Sessions: admin via password + Open, resident via "view as".
-const page = await http('GET', 'localhost', '/');
-const login = await http('POST', 'localhost', '/', { form: { [actionIn(page.body, 'name="password"')]: '', email: process.env['E2E_ADMIN_EMAIL']!, password: process.env['E2E_ADMIN_PASSWORD']! } });
+const page = await http('GET', 'localhost', '/login');
+const login = await http('POST', 'localhost', '/login', { form: { [actionIn(page.body, 'name="password"')]: '', email: process.env['E2E_ADMIN_EMAIL']!, password: process.env['E2E_ADMIN_PASSWORD']! } });
 const open = new URL((await http('GET', 'localhost', `/platform/open/${org.id}`, { cookie: login.cookie })).location);
 const admin = (await http('GET', HOST, open.pathname + open.search)).cookie!;
 const residents = await http('GET', HOST, '/manage/residents', { cookie: admin });
@@ -32,6 +32,13 @@ const asResident = (await http('POST', HOST, '/manage/residents', { cookie: admi
 
 const byKind = (k: string) => facilities.find((f) => f.kind === k)!;
 const routes: Array<{ path: string; cookie: string | null; host?: string }> = [
+  { path: '/', cookie: null, host: 'localhost' },
+  { path: '/login', cookie: null, host: 'localhost' },
+  { path: '/login?error=invalid&sent=1&dev=http%3A%2F%2Fdemo-north.localhost%3A3000%2Fauth%2Fverify%3Ftoken%3Dabcdefghijklmnopqrstuvwxyz0123456789', cookie: null, host: 'localhost' },
+  { path: '/signup', cookie: null, host: 'localhost' },
+  { path: '/signup?sent=1', cookie: null, host: 'localhost' },
+  { path: '/privacy', cookie: null, host: 'localhost' },
+  { path: '/terms', cookie: null, host: 'localhost' },
   { path: '/', cookie: null },
   { path: '/?error=invalid&sent=1&dev=http%3A%2F%2Fdemo-north.localhost%3A3000%2Fauth%2Fverify%3Ftoken%3Dabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJ', cookie: null },
   { path: '/', cookie: null, host: 'unknown-org.localhost' },
@@ -77,6 +84,8 @@ try {
         const inner = window.innerWidth;
         const offenders = [];
         for (const el of document.querySelectorAll('body *')) {
+          // Decorative, clipped glows are allowed past the edge; the page scroll check still applies.
+          if (el.closest('[aria-hidden="true"]')) continue;
           const r = el.getBoundingClientRect();
           if (r.width > 0 && r.right > inner + 1) {
             offenders.push(el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : '') + ' right=' + Math.round(r.right));

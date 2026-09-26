@@ -8,7 +8,9 @@ Kellona is a booking system for student housing organizations. One deployment an
 
 1. Exact match in `OrgDomain.host` (customer subdomains and custom domains, for example `varaukset.customer.fi`).
 2. `<slug>.<platform domain>` where platform domains come from `PLATFORM_DOMAINS` (default `kellona.fi,kellona.com`).
-3. In development only: `<slug>.localhost:3000`, and plain `localhost` falls back to `DEV_ORG_SLUG`.
+3. In development only: `<slug>.localhost:3000`.
+
+The bare platform host (`kellona.fi`, `kellona.com`, and `localhost` in development) is Kellona's own site: the landing page at `/`, `/login` and `/signup`. There, `/signup` stores a pilot request (`AccessRequest`) that super-admins see under Platform, and a resident or staff member who asks for a sign-in link gets one to their own organization's address.
 
 An unknown host renders a neutral Kellona page. Org-only pages call `requireOrg()`, which returns 404 there. Host parsing is pure and unit tested (`src/lib/tenant/host.ts`, `tests/host.test.ts`).
 

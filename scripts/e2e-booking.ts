@@ -49,9 +49,9 @@ try {
   await s.unitAmenities.create({ unitId: u2.id, kind: 'sauna', enabled: false });
 
   // Super-admin: sign in on the platform host, then Open hands over to the scratch org.
-  const signin = await http('GET', 'localhost', '/');
-  const login = await http('POST', 'localhost', '/', { form: { [actionIn(signin.body, 'name="password"')]: '', email: adminEmail, password: adminPassword } });
-  check('admin signs in', login.status === 303 && Boolean(login.cookie), `${login.status} ${login.location}`);
+  const signin = await http('GET', 'localhost', '/login');
+  const login = await http('POST', 'localhost', '/login', { form: { [actionIn(signin.body, 'name="password"')]: '', email: adminEmail, password: adminPassword } });
+  check('admin signs in on Kellona and lands on /platform', login.status === 303 && login.location.endsWith('/platform') && Boolean(login.cookie), `${login.status} ${login.location}`);
   const open = await http('GET', 'localhost', `/platform/open/${org.id}`, { cookie: login.cookie });
   const handoffUrl = new URL(open.location);
   check('Open redirects to the organization address', open.status === 307 && handoffUrl.hostname === host, open.location);

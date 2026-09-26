@@ -20,7 +20,7 @@ After signing in as a super-admin, use Platform, then Open on any organization. 
 - http://demo-north.localhost:3000 (demo organization, Finnish default)
 - http://demo-lakeside.localhost:3000 (demo organization, English default)
 - http://booking.lakeside.localhost:3000 (same organization through a custom domain entry)
-- http://localhost:3000 (falls back to `DEV_ORG_SLUG`)
+- http://localhost:3000 (Kellona's own landing page, with /login and /signup)
 
 `*.localhost` addresses work in Chrome, Firefox and Safari without editing `/etc/hosts`.
 

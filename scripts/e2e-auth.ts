@@ -136,6 +136,25 @@ try {
   const unknown = await http('POST', scratchHost, '/', { form: { [scratchLink!]: '', email: `nobody-${tag}@example.test` } });
   check('unknown email does not reveal anything', unknown.location.includes('sent=1') && !unknown.location.includes('dev='), unknown.location);
 
+  // 6b. On Kellona's own address, a resident's link points at their organization.
+  const platformLogin = await http('GET', 'localhost', '/login');
+  // Login page actions in order: password form, then the link button.
+  const platformLink = actionIds(platformLogin.body)[1]!;
+  const fromPlatform = await http('POST', 'localhost', '/login', { form: { [platformLink]: '', email: linkEmail } });
+  const devFromPlatform = new URL(fromPlatform.location, 'http://x').searchParams.get('dev') ?? '';
+  check('platform sign-in sends a link to the organization address', new URL(devFromPlatform || 'http://x/').hostname === scratchHost, fromPlatform.location);
+  const landing = await http('GET', 'localhost', '/');
+  check('Kellona address shows the Kellona landing', landing.status === 200 && landing.body.includes('Kellona') && !landing.body.includes('Northwind'));
+  const signupPage = await http('GET', 'localhost', '/signup');
+  const pilot = await http('POST', 'localhost', '/signup', {
+    form: { [actionIds(signupPage.body)[0]!]: '', organizationName: `Scratch Housing ${tag}`, contactName: 'Test', email: `pilot-${tag}@example.test`, website: '' },
+  });
+  const saved = await db.orm.public.AccessRequest.where({ email: `pilot-${tag}@example.test` }).first();
+  check('pilot request saved', pilot.location.includes('sent=1') && Boolean(saved), pilot.location);
+  if (saved) await db.orm.public.AccessRequest.where({ id: saved.id }).delete();
+  const orgSignup = await http('GET', 'demo-north.localhost', '/signup');
+  check('organization address has no sign-up page', orgSignup.status === 307 && orgSignup.location.endsWith('/'), `${orgSignup.status}`);
+
   // 7. Sign out.
   const acct = await http('GET', scratchHost, '/account', { cookie: used.cookie ?? '' });
   const signOut = acct.body.includes('Kirjaudu ulos') ? actionIn(acct.body, 'Kirjaudu ulos') : actionIn(acct.body, 'Sign out');
